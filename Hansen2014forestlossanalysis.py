@@ -1,3 +1,4 @@
+# Section 1
 import os
 import arcpy
 from arcpy.sa import *
@@ -13,12 +14,12 @@ pre processing:
 3. Calculate the unique id column to be python syntax, !ISO! + "_" + str(!FID!)
 
 Paths/names to change in script:
-1. line 27: indir- change this to the name of the input zone file
-2. line 34: area_type- useful for calculating national, subnational, protected areas, etc. A way to distinguish the output tables
-3. line 35: column name- should be the name of the column in the shapefile that is the unique ID. Values in this column become the output zonal stats table name
-4. line 42: hansen loss year data mosaic
-5. line 43: tree cover density mosaic
-6. line 44: area tiles mosaic
+1. line 30: indir- change this to the name of the input zone file
+2. line 37: area_type- useful for calculating national, subnational, protected areas, etc. A way to distinguish the output tables
+3. line 38: column name- should be the name of the column in the shapefile that is the unique ID. Values in this column become the output zonal stats table name
+4. line 43: hansen loss year data mosaic
+5. line 44: tree cover density mosaic
+6. line 45: area tiles mosaic
 '''
 # set environments, pt1
 arcpy.CheckOutExtension("Spatial")
