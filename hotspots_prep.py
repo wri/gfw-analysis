@@ -61,13 +61,3 @@ arcpy.CalculateField_management(layer, field="date", expression=""""1/1/200"+str
 
 arcpy.SelectLayerByAttribute_management(layer,"NEW_SELECTION", "GRID_CODE >=10")
 arcpy.CalculateField_management(layer, field="date", expression=""""1/1/20"+str(!GRID_CODE!)""", expression_type="PYTHON_9.3", code_block="")
-
-
-print "     create space time cuuuube"
-netcdf = os.path.join(maindir,f+"_hs.nc")
-arcpy.CreateSpaceTimeCube_stpm(layer,netcdf,"date","","1 Years","","","2.5 Kilometers")
-arcpy.stpm.CreateSpaceTimeCube("ID0_hs_points_prj", r"D:\_sam\hot_spot\liberia\ID0_hs_v03.nc", "date", None, "1 Years", "END_TIME", None, "2.5 Kilometers", None)
-print "     create emerging hotspots"
-hotspots = os.path.join(maindir,f+"_hs_final.shp")
-arcpy.EmergingHotSpotAnalysis_stpm(netcdf,"COUNT",hotspots, "",1)
-
