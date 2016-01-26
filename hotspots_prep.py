@@ -1,5 +1,6 @@
 #make sure to have remapped TCD layer (0-10 as NoData, >10 as 1)
 #set indir to AOI (country or other AOI)
+#select buffere distance on line 37
 
 import os
 import arcpy
