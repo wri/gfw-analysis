@@ -33,8 +33,9 @@ arcpy.env.snapRaster = hansenareamosaic
 #change buffer distance to suit aoi of script.
 arcpy.AddMessage( "     buffering aoi")
 f = os.path.basename(indir).split(".")[0]
+buff_distance=arcpy.GetParameterAsText(2)
 outbuff =os.path.join(maindir,f+"_buff.shp")
-arcpy.Buffer_analysis(indir, outbuff, '10 Kilometers')
+arcpy.Buffer_analysis(indir, outbuff, str(buff_distance)+ ' Kilometers')
 
 arcpy.AddMessage( "     extracting by mask")
 outExtractbyMask = ExtractByMask(lossyearmosaic,outbuff)
