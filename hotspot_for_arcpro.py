@@ -16,8 +16,8 @@ maindir =arcpy.GetParameterAsText(1)
 outdir = os.path.join(maindir,"outdir")
 
 #'''Section 3: set path to mosaic files #################################################################'''
-lossyearmosaic = r'D:\_sam\mosaics.gdb\lossdata_2001_2014'
-tcdmosaic = r'D:\_sam\liberia\mosaics.gdb\treecoverdensity_2000'
+lossyearmosaic = r'H:\gfw_gis_team_data\hotspot_mosaics.gdb\hs_treecoverloss'
+tcdmosaic = r'H:\gfw_gis_team_data\hotspot_mosaics.gdb\hs_treecoverdensity'
 hansenareamosaic = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area'
 
 #'''Section 4: Set environments (part 2) #####################################################################'''
