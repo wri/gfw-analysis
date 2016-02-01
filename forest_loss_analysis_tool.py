@@ -5,6 +5,8 @@ from arcpy import *
 from arcpy.sa import *
 import time, subprocess
 from sys import argv
+from boundary_prep_arcpro import *
+from dictionaries import dict
 
 def zonal_stats_forest(zone_raster, value_raster, area_type, calculation, snapraster):
     arcpy.AddMessage(  "zonal stats")
@@ -37,11 +39,9 @@ def merge_tables(envir,dbf_name,area_type,boundary_id,merged_dir):
     outtable = str(boundary_id) + "_"+area_type +"_"+dbf_name + '_merge.txt'
     arcpy.TableToTable_conversion(final_merge_table,merged_dir,outtable)
 
-
 def loss_and_biomass(option):
     arcpy.env.scratchWorkspace = scratch_gdb
     table_names_27m = ["area","biomass_max","biomass_min"]
-
     z_stats_tbl = os.path.join(outdir, fc_name + "_" + area_type + "_" + table_names_27m[0] + ".dbf")
     if option != "None":
         if not os.path.exists(z_stats_tbl):
@@ -123,36 +123,38 @@ def biomass30m(option):
     return option_list
 
 def user_inputs():
-
     maindir = arcpy.GetParameterAsText(0)
     boundary = arcpy.GetParameterAsText(1)
     boundary_id = arcpy.GetParameterAsText(2)
     main_analysis= arcpy.GetParameterAsText(3)
     biomass_analysis = arcpy.GetParameterAsText(5)
-
+    analysis_boundary  = arcpy.GetParameterAsText(9) # land use boundary or country level
     if main_analysis == "area only":
         input_zone = arcpy.GetParameterAsText(4)
-        # input_zone = raw_input("You want to run area zonal stats, input your zone raster path: ")
+    admin_level = arcpy.GetParameterAsText(6)
+    column_name,column_calc, area_type,admin_file = dict(admin_level,adm0,adm1,adm2)
 
-    area_type_num = arcpy.GetParameterAsText(6)
+    if admin_level == "other":
+        area_type = arcpy.GetParameterAsText(7) # "You want to run a custom area. Enter a short name to give your area (less than 15 characters):
+        column_name = arcpy.GetParameterAsText(8) #Enter the name of the column which uniquely identifies each feature in the input shapefile
 
-    if area_type_num == "national":
-        area_type = "nat"
-        column_name = "adm0_id"
-    if area_type_num == "subnational":
-        area_type = "subnat"
-        column_name = "adm1_id"
-    if area_type_num == "other":
-        # area_type = raw_input("You want to run a custom area. "
-        #                       "Enter a short name to give your area (less than 15 characters): ")
-        area_type = arcpy.GetParameterAsText(7)
-        column_name = arcpy.GetParameterAsText(8)
-        # column_name = raw_input("Enter the name of the column which uniquely identifies each "
-        #                         "feature in the input shapefile: ")
-
-    return maindir, boundary, area_type,column_name,main_analysis,biomass_analysis,boundary_id
+    return maindir, boundary, area_type,column_name,main_analysis,biomass_analysis,boundary_id,analysis_boundary,admin_level,column_calc,admin_file
 #--------------------------
-maindir, boundary, area_type,column_name,main_analysis,biomass_analysis,boundary_id = user_inputs()
+
+# set input files
+hansenareamosaic = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area'
+biomassmosaic = r'H:\gfw_gis_team_data\whrc_carbon\whrc_carbon.gdb\whrc_carbon'
+tcdmosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_30m_2000'
+hansenareamosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area_30m'
+lossyearmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\lossdata_2001_2014'
+# tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2000'
+tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2010'
+adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
+adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
+adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
+grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
+
+maindir, boundary1, area_type,column_name,main_analysis,biomass_analysis,boundary_id,analysis_boundary,admin_level,column_calc,admin_file = user_inputs()
 
 arcpy.env.workspace = maindir
 arcpy.CheckOutExtension("Spatial")
@@ -161,28 +163,18 @@ scratch_gdb = os.path.join(maindir, "scratch.gdb")
 if not os.path.exists(scratch_gdb):
     arcpy.CreateFileGDB_management(maindir, "scratch.gdb")
 arcpy.env.scratchWorkspace = scratch_gdb
-
-# set input files
-hansenareamosaic = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area'
-biomassmosaic = r'H:\gfw_gis_team_data\whrc_carbon\whrc_carbon.gdb\whrc_carbon'
-tcdmosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_30m_2000'
-hansenareamosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area_30m'
-lossyearmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\lossdata_2001_2014'
-tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2000'
-
 error_text_file = os.path.join(maindir,area_type + '_errors.txt')
 outdir = os.path.join(maindir, "outdir")
 if not os.path.exists(outdir):
     os.mkdir(outdir)
-
 merged_dir = os.path.join(maindir,'merged')
 if not os.path.exists(merged_dir):
     os.mkdir(merged_dir)
 
+boundary = boundary_prep(boundary1,maindir,analysis_boundary,column_name,admin_file,grid,column_calc)
 total_features = int(arcpy.GetCount_management(boundary).getOutput(0))
 start = datetime.datetime.now()
 option_list = []
-
 with arcpy.da.SearchCursor(boundary, ("Shape@", column_name)) as cursor:
     feature_count = 0
     for row in cursor:
@@ -191,10 +183,8 @@ with arcpy.da.SearchCursor(boundary, ("Shape@", column_name)) as cursor:
         fc_geo = row[0]
         fc_name = str(row[1])
         arcpy.AddMessage( fc_name + " " + str(feature_count)+"/"+str(total_features))
-
         loss_and_biomass(main_analysis)
         biomass30m(biomass_analysis)
-
         arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
     del cursor
 
