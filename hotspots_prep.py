@@ -1,5 +1,6 @@
 #make sure to have remapped TCD layer (0-10 as NoData, >10 as 1)
 #set indir to AOI (country or other AOI)
+#select buffere distance on line 37
 
 import os
 import arcpy
@@ -17,8 +18,10 @@ maindir = r'D:\_sam\hot_spot\liberia\012816\set_buffer_10k'
 outdir = os.path.join(maindir,"outdir")
 
 #'''Section 3: set path to mosaic files #################################################################'''
+
 lossyearmosaic = r'D:\_sam\mosaics.gdb\lossdata_2001_2014'
 tcdmosaic = r'D:\_sam\liberia\mosaics.gdb\treecoverdensity_2000'
+
 hansenareamosaic = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area'
 
 #'''Section 4: Set environments (part 2) #####################################################################'''
@@ -62,6 +65,7 @@ arcpy.CalculateField_management(layer, field="date", expression=""""1/1/200"+str
 
 arcpy.SelectLayerByAttribute_management(layer,"NEW_SELECTION", "GRID_CODE >=10")
 arcpy.CalculateField_management(layer, field="date", expression=""""1/1/20"+str(!GRID_CODE!)""", expression_type="PYTHON_9.3", code_block="")
+
 print str(datetime.datetime.now() - start)
 #
 
@@ -71,4 +75,5 @@ print str(datetime.datetime.now() - start)
 # print "     create emerging hotspots"
 # hotspots = os.path.join(maindir,f+"_hs_final.shp")
 # arcpy.EmergingHotSpotAnalysis_stpm(netcdf,"COUNT",hotspots, "",1)
+
 
