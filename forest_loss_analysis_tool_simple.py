@@ -7,7 +7,14 @@ import time, subprocess
 from sys import argv
 from boundary_prep_arcpro import *
 from dictionaries import dict
-
+def remapmosaic(threshold,remaptable):
+    tcdcolumn = "tcd"+str(threshold)
+    rows = arcpy.UpdateCursor(remaptable)
+    for row in rows:
+        output = row.getValue(tcdcolumn)
+        row.output = output
+        rows.updateRow(row)
+    del rows
 def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapraster):
     arcpy.AddMessage(  "zonal stats")
     arcpy.env.snapRaster = snapraster
@@ -26,8 +33,6 @@ def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapras
     arcpy.CalculateField_management(z_stats_tbl, "ID", "'" + expr + "'", "PYTHON_9.3")
     if not calculation in option_list:
         option_list.append(calculation)
-
-
 def merge_tables(envir,option,filename,merged_dir):
     arcpy.env.workspace = envir
     table_list = arcpy.ListTables("*_"+option+".dbf")
@@ -39,8 +44,7 @@ def merge_tables(envir,option,filename,merged_dir):
     arcpy.AddField_management(pivottable, "total", "LONG")
     fc = pivottable
 
-    # making a list of fields that contain VSG_EIZEL
-    # ex VSG_EINZEL, VSG_EIZEL_1, VSG_EIZEL_2
+    # making a list of fields for the year columns, excluse year 0
     field_prefix = "Value"
     field_list = []
     f_list = arcpy.ListFields(fc)
@@ -52,14 +56,13 @@ def merge_tables(envir,option,filename,merged_dir):
     # and update the total field
     rows = arcpy.UpdateCursor(fc)
     for row in rows:
-        VSG_SUM = 0
+        total = 0
         for f in field_list:
-            VSG_SUM += row.getValue(f)
-        row.total = VSG_SUM
+            total += row.getValue(f)
+        row.total = total
         rows.updateRow(row)
-        del VSG_SUM
+        del total
     del rows
-
 def loss_and_biomass(option):
     arcpy.env.scratchWorkspace = scratch_gdb
     table_names_27m = ["area","biomass_max","biomass_min"]
@@ -113,7 +116,6 @@ def loss_and_biomass(option):
         pass
 
     return option_list
-
 def biomass30m(option):
 
     if option == "biomass":
@@ -136,7 +138,6 @@ def biomass30m(option):
     if option == "none":
         pass
     return option_list
-
 def user_inputs():
     maindir = arcpy.GetParameterAsText(0)
     shapefile = arcpy.GetParameterAsText(1)
@@ -146,11 +147,8 @@ def user_inputs():
     biomass_analysis = arcpy.GetParameterAsText(5)
     if main_analysis == "area only":
         input_zone = arcpy.GetParameterAsText(6)
-
-
-
-    return maindir, shapefile,column_name,main_analysis,biomass_analysis,filename
-
+    threshold = arcpy.GetParameterAsText(7)
+    return maindir, shapefile,column_name,main_analysis,biomass_analysis,filename,threshold
 #--------------------------
 def inputfile():
     # set input files
@@ -165,16 +163,21 @@ def inputfile():
     adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
     adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
     grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
-
 # set input files
-hansenareamosaic = arcpy.GetParameterAsText(7)
-biomassmosaic = arcpy.GetParameterAsText(8)
-tcdmosaic30m = arcpy.GetParameterAsText(9)
-hansenareamosaic30m = arcpy.GetParameterAsText(10)
-lossyearmosaic = arcpy.GetParameterAsText(11)
-tcdmosaic = arcpy.GetParameterAsText(12)
-maindir, shapefile, column_name,main_analysis,biomass_analysis,filename = user_inputs()
+hansenareamosaic = arcpy.GetParameterAsText(8)
+biomassmosaic = arcpy.GetParameterAsText(9)
+tcdmosaic30m = arcpy.GetParameterAsText(10)
+hansenareamosaic30m = arcpy.GetParameterAsText(11)
+lossyearmosaic = arcpy.GetParameterAsText(12)
+tcdmosaic = arcpy.GetParameterAsText(13)
+remaptable = arcpy.GetParameterAsText(14)
+# get user inputs
+maindir, shapefile, column_name,main_analysis,biomass_analysis,filename,threshold = user_inputs()
 
+# remap tcd mosaic
+remapmosaic(threshold,remaptable)
+
+# set up directories
 arcpy.env.workspace = maindir
 arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = "TRUE"
@@ -190,7 +193,7 @@ merged_dir = os.path.join(maindir,'merged')
 if not os.path.exists(merged_dir):
     os.mkdir(merged_dir)
 
-
+# get feature count, set up to start looping
 total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
 start = datetime.datetime.now()
 option_list = []
@@ -208,8 +211,18 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
         arcpy.AddMessage(option_list)
         arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
     del cursor
+
+# merge output fc tables into 1 per analysis
 arcpy.AddMessage(  "merge tables")
 for option in option_list:
     merge_tables(outdir,option,filename,merged_dir)
 
+# average the min/max biomass tables
+if "biomass_max" in option_list:
+    '''
+    create biomass_average table
+    columns: value, sum, count
+    join biomass max, min, area tables
+    long complicated formula. then update new average table with it
+    '''
 arcpy.AddMessage(  "\n total elapsed time: " + str(datetime.datetime.now() - start))
