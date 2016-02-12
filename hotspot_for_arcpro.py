@@ -10,9 +10,9 @@ arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = "TRUE"
 
 #''' Section 2: Set directories ##############################################################################'''
-indir = arcpy.GetParameterAsText(0)
+indir = r'D:\Liz\cargill\new_draw.shp'
 #------------------------------------
-maindir =arcpy.GetParameterAsText(1)
+maindir = r'D:\Liz\cargill'
 outdir = os.path.join(maindir,"outdir")
 
 #'''Section 3: set path to mosaic files #################################################################'''
@@ -30,15 +30,15 @@ arcpy.env.workspace = outdir
 arcpy.env.snapRaster = hansenareamosaic
 
 #'''Section 5: main body of script ############################################################################'''
-#change buffer distance to suit aoi of script.
-arcpy.AddMessage( "     buffering aoi")
+# change buffer distance to suit aoi of script.
+# arcpy.AddMessage( "     buffering aoi")
 f = os.path.basename(indir).split(".")[0]
-buff_distance=arcpy.GetParameterAsText(2)
-outbuff =os.path.join(maindir,f+"_buff.shp")
-arcpy.Buffer_analysis(indir, outbuff, str(buff_distance)+ ' Kilometers')
+# buff_distance=arcpy.GetParameterAsText(2)
+# outbuff =os.path.join(maindir,f+"_buff.shp")
+# arcpy.Buffer_analysis(indir, outbuff, str(buff_distance)+ ' Kilometers')
 
 arcpy.AddMessage( "     extracting by mask")
-outExtractbyMask = ExtractByMask(lossyearmosaic,outbuff)
+outExtractbyMask = ExtractByMask(lossyearmosaic,indir)
 
 arcpy.AddMessage( "     multiplying")
 outMult =outExtractbyMask*Raster(tcdmosaic)
@@ -48,7 +48,7 @@ arcpy.AddMessage( "     converting to point")
 arcpy.RasterToPoint_conversion(outMult, "in_memory/outpoint", "VALUE")
 
 arcpy.AddMessage( "     projecting")
-outprj = os.path.join(maindir,f+"_hs_points_prj.shp")
+outprj = os.path.join(maindir,f+ "_hs_points_prj.shp")
 out_coordinate_system = arcpy.SpatialReference('Eckert IV (world)')
 arcpy.Project_management("in_memory/outpoint",outprj, out_coordinate_system)
 
