@@ -18,7 +18,7 @@ def remapmosaic(threshold,remaptable):
     arcpy.EditRasterFunction_management(
      tcdmosaic, "EDIT_MOSAIC_DATASET",
      "REPLACE", remapfunction)
-def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapraster):
+def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapraster,column_name):
     arcpy.AddMessage(  "zonal stats")
     arcpy.env.snapRaster = snapraster
     if calculation == "biomass_max" or calculation == "area"or calculation == "area_only":
@@ -27,13 +27,18 @@ def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapras
         arcpy.env.cellSize = "MINOF"
     if calculation == "area_30m" or calculation == "biomass_30m":
         arcpy.env.cellSize = "MAXOF"
-    expr = fc_name.split("_")[0]
 
-    z_stats_tbl = os.path.join(outdir, fc_name + "_" + filename + "_" + calculation)
+    if " " in column_name:
+        column_name = column_name.replace(" ","_")
+    if column_name[0].isdigit():
+        column_name = "x"+str(column_name)
+
+    z_stats_tbl = os.path.join(outdir, column_name + "_" + filename + "_" + calculation)
 
     arcpy.gp.ZonalStatisticsAsTable_sa(zone_raster, "VALUE", value_raster, z_stats_tbl, "DATA", "SUM")
+    # add a field to identify the table onces it is merged with the other zonal stats tables
     arcpy.AddField_management(z_stats_tbl, "ID", "TEXT")
-    arcpy.CalculateField_management(z_stats_tbl, "ID", "'" + expr + "'", "PYTHON_9.3")
+    arcpy.CalculateField_management(z_stats_tbl, "ID", "'" + column_name + "'", "PYTHON_9.3")
     if not calculation in option_list:
         option_list.append(calculation)
 
@@ -57,27 +62,31 @@ def merge_tables(envir,option,filename,merged_dir):
                     cursor.updateRow(row)
         del cursor
 # average the min/max biomass tables
-def avgBiomass(merged_dir,userinput_columnname):
+def avgBiomass(merged_dir,column_name):
     arcpy.env.workspace = merged_dir
+
     area = arcpy.ListTables("*_area_merge")[0]
     max = arcpy.ListTables("*_max_merge")[0]
     min = arcpy.ListTables("*_min_merge")[0]
 
     arcpy.AddField_management(max,"L","DOUBLE")
-    arcpy.AddField_management(max,"uID","TEXT")
-    userinput_columnname = "Name_1"
-    "'" + userinput_columnname + "'"
     arcpy.CalculateField_management(max,"L","!SUM!", "PYTHON_9.3", "")
-    arcpy.CalculateField_management(max,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
-    expression = """ !ID! +"_"+str( !Value!)"""
-    arcpy.CalculateField_management(max,"uID",expression, "PYTHON_9.3", "")
     arcpy.DeleteField_management(max,"SUM")
 
+    column_name = "!"+column_name+"!"
+    expression = column_name + '"_"+str(!Value!)'
+    arcpy.AddField_management(max,"uID","TEXT")
+    arcpy.CalculateField_management(max,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
+
+
     arcpy.AddField_management(min,"S","DOUBLE")
-    arcpy.AddField_management(min,"uID","TEXT")
     arcpy.CalculateField_management(min,"S","!SUM!", "PYTHON_9.3", "")
-    arcpy.CalculateField_management(min,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
     arcpy.DeleteField_management(min,"SUM")
+
+    arcpy.AddField_management(min,"uID","TEXT")
+    arcpy.CalculateField_management(min,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
+
+
 
     arcpy.AddField_management(area,"uID","TEXT")
     arcpy.CalculateField_management(area,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
@@ -113,7 +122,7 @@ def pivotTable(input_table,field,fname):
 def loss_and_biomass(option):
     arcpy.env.scratchWorkspace = scratch_gdb
     table_names_27m = ["area","biomass_max","biomass_min"]
-    z_stats_tbl = os.path.join(outdir, fc_name + "_" + filename + "_" + table_names_27m[0])
+    z_stats_tbl = os.path.join(outdir, column_name + "_" + filename + "_" + table_names_27m[0])
     if option != "None":
         if not os.path.exists(z_stats_tbl):
             arcpy.env.snapRaster = hansenareamosaic
@@ -122,13 +131,13 @@ def loss_and_biomass(option):
             try:
                 if option == "loss":
                     table = table_names_27m[0]
-                    zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table,hansenareamosaic)
+                    zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table,hansenareamosaic,column_name)
                     if not table in option_list:
                         option_list.append(table)
                 if option == "loss and biomass":
-                    zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table_names_27m[0],hansenareamosaic)
-                    zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[1],hansenareamosaic)
-                    zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[2],hansenareamosaic)
+                    zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table_names_27m[0],hansenareamosaic,column_name)
+                    zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[1],hansenareamosaic,column_name)
+                    zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[2],hansenareamosaic,column_name)
                     if not table_names_27m[0] in option_list:
                         option_list.extend(table_names_27m)
 
@@ -137,14 +146,14 @@ def loss_and_biomass(option):
                 arcpy.AddMessage(  "     failed")
                 error_text = "I/O error({0}): {1}".format(e.errno, e.strerror)
                 errortext = open(error_text_file,'a')
-                errortext.write(fc_name + " " + str(error_text) + "\n")
+                errortext.write(column_name + " " + str(error_text) + "\n")
                 errortext.close()
                 pass
             except ValueError:
                 arcpy.AddMessage(  "     failed")
                 error_text="Could not convert data to an integer."
                 errortext = open(error_text_file,'a')
-                errortext.write(fc_name + " " + str(error_text) + "\n")
+                errortext.write(column_name + " " + str(error_text) + "\n")
                 errortext.close()
                 pass
             except:
@@ -152,7 +161,7 @@ def loss_and_biomass(option):
                 error_text= "Unexpected error:", sys.exc_info()
                 error_text= error_text[1][1]
                 errortext = open(error_text_file,'a')
-                errortext.write(fc_name + " " + str(error_text) + "\n")
+                errortext.write(column_name + " " + str(error_text) + "\n")
                 errortext.close()
                 pass
 
@@ -177,8 +186,8 @@ def biomass30m(option):
         outPlus =outExtractbyMask*(Raster(hansenareamosaic30m)/10000)
 
         # send data to zonal stats function
-        zonal_stats_forest(tcdmosaic30m, area_extract, filename, "area30m",hansenareamosaic30m)
-        zonal_stats_forest(tcdmosaic30m, outPlus, filename, "biomass30m",hansenareamosaic30m)
+        zonal_stats_forest(tcdmosaic30m, area_extract, filename, "area30m",hansenareamosaic30m,column_name)
+        zonal_stats_forest(tcdmosaic30m, outPlus, filename, "biomass30m",hansenareamosaic30m,column_name)
         if not "area30m" in option_list:
             option_list.extend(["area30m","biomass30m"])
         time = str(datetime.datetime.now() - start)
@@ -190,6 +199,7 @@ def user_inputs():
     shapefile = arcpy.GetParameterAsText(1)
     filename = GetParameterAsText(2)
     column_name=arcpy.GetParameterAsText(3)
+
     main_analysis= arcpy.GetParameterAsText(4)
     biomass_analysis = arcpy.GetParameterAsText(5)
     if main_analysis == "area only":
@@ -252,8 +262,8 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
         fctime = datetime.datetime.now()
         feature_count += 1
         fc_geo = row[0]
-        fc_name = str(row[1])
-        arcpy.AddMessage( fc_name + " " + str(feature_count)+"/"+str(total_features))
+        column_name = str(row[1])
+        arcpy.AddMessage( column_name + " " + str(feature_count)+"/"+str(total_features))
         loss_and_biomass(main_analysis)
         biomass30m(biomass_analysis)
         arcpy.AddMessage(option_list)
@@ -272,7 +282,7 @@ if "area" in option_list:
     pivotTable(area,"SUM","area_pivot")
 if "biomass_max" in option_list:
     arcpy.AddMessage(  "calc average biomass")
-    avgBiomass(merged_dir)
+    avgBiomass(merged_dir,column_name)
     arcpy.AddMessage(  "create biomass pivot")
     pivotTable(area,"avgBiomass","biomass_pivot")
     arcpy.AddMessage(  "\n total elapsed time: " + str(datetime.datetime.now() - start))
