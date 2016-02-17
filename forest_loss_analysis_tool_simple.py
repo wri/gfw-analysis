@@ -7,8 +7,20 @@ import time, subprocess
 from sys import argv
 from boundary_prep_arcpro import *
 from dictionaries import dict
-def remapmosaic(threshold,remaptable):
+def remapmosaic(threshold,remaptable,remapfunction):
+    arcpy.AddMessage("removing potential existing function")
+    # remove potential existing function
+    arcpy.EditRasterFunction_management(
+    tcdmosaic, "EDIT_MOSAIC_DATASET",
+    "REMOVE", remapfunction)
+
+    arcpy.EditRasterFunction_management(
+    tcdmosaic30m, "EDIT_MOSAIC_DATASET",
+    "REMOVE", remapfunction)
+
+    # copying remap values from tcd column into the "output" column for remap table
     tcdcolumn = "tcd"+str(threshold)
+    arcpy.AddMessage("updating remap table column")
     rows = arcpy.UpdateCursor(remaptable)
     for row in rows:
         output = row.getValue(tcdcolumn)
@@ -17,7 +29,11 @@ def remapmosaic(threshold,remaptable):
     del rows
     arcpy.EditRasterFunction_management(
      tcdmosaic, "EDIT_MOSAIC_DATASET",
-     "REPLACE", remapfunction)
+     "INSERT", remapfunction)
+
+    arcpy.EditRasterFunction_management(
+     tcdmosaic30m, "EDIT_MOSAIC_DATASET",
+     "INSERT", remapfunction)
 def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapraster,column_name):
     arcpy.AddMessage(  "zonal stats")
     arcpy.env.snapRaster = snapraster
@@ -44,30 +60,31 @@ def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapras
 
 def merge_tables(envir,option,filename,merged_dir):
     arcpy.env.workspace = envir
-    table_list = arcpy.ListTables("*_"+option)
-    arcpy.AddMessage(table_list)
+    table_list = arcpy.ListTables("*"+filename+"_"+option)
+    # arcpy.AddMessage(table_list)
     final_merge_table = os.path.join(merged_dir,filename+"_"+option + "_merge")
-    arcpy.AddMessage(final_merge_table)
+    # arcpy.AddMessage(final_merge_table)
     arcpy.Merge_management(table_list,final_merge_table)
     # delete rows where valye <15 and add Year field and update rows
-    dict = {15:"no loss",16:"y2001",17:"y2002",18:"y2003",19:"y2004",20:"y2005",21:"y2006",22:"y2007",23:"y2008",24:"y2009",25:"y2010",26:"y2011",27:"y2012",28:"y2013",29:"y2014"}
+    # dict = {15:"no loss",16:"y2001",17:"y2002",18:"y2003",19:"y2004",20:"y2005",21:"y2006",22:"y2007",23:"y2008",24:"y2009",25:"y2010",26:"y2011",27:"y2012",28:"y2013",29:"y2014"}
+    dict = {20:"no loss",21:"y2001",22:"y2002",23:"y2003",24:"y2004",25:"y2005",26:"y2006",27:"y2007",28:"y2008",29:"y2009",30:"y2010",31:"y2011",32:"y2012",33:"y2013",34:"y2014",35:"y2015",36:"y2016",37:"y2017",38:"y2018",39:"y2019",40:"y2020"}
     arcpy.AddField_management(final_merge_table,"Year","TEXT","","",10)
     with arcpy.da.UpdateCursor(final_merge_table, ["Value","Year"]) as cursor:
         for row in cursor:
-            if row[0] < 15:
+            if row[0] < 20:
                 cursor.deleteRow()
-            for v in range(15,30):
+            for v in range(20,40):
                 if row[0] == v:
                     row[1] = dict[v]
                     cursor.updateRow(row)
         del cursor
 # average the min/max biomass tables
-def avgBiomass(merged_dir,column_name):
+def avgBiomass(merged_dir,column_name,filename):
     arcpy.env.workspace = merged_dir
 
-    area = arcpy.ListTables("*_area_merge")[0]
-    max = arcpy.ListTables("*_max_merge")[0]
-    min = arcpy.ListTables("*_min_merge")[0]
+    area = arcpy.ListTables("*"+filename+"_area_merge")[0]
+    max = arcpy.ListTables("*"+filename+"_biomass_max_merge")[0]
+    min = arcpy.ListTables("*"+filename+"_biomass_min_merge")[0]
 
     arcpy.AddField_management(max,"L","DOUBLE")
     arcpy.CalculateField_management(max,"L","!SUM!", "PYTHON_9.3", "")
@@ -94,7 +111,7 @@ def avgBiomass(merged_dir,column_name):
     arcpy.JoinField_management(area,"uID",max,"uID",["L"])
     arcpy.JoinField_management(area,"uID",min,"uID",["S"])
     arcpy.AddField_management(area,"avgBiomass","DOUBLE")
-    arcpy.CalculateField_management(area,"avgBiomass","(( !SUM!/10000)/ !COUNT! * ( !L!/1000000)+( !SUM!/10000)/ !COUNT! * ( !S!/1000000))/2", "PYTHON_9.3", "")
+    arcpy.CalculateField_management(area,"avgBiomass","((( !SUM!/10000)/ !COUNT! * ( !L!/1000000)+( !SUM!/10000)/ !COUNT! * ( !S!/1000000))/2)*.5*3.67", "PYTHON_9.3", "")
 def pivotTable(input_table,field,fname):
     pivottable = os.path.join(merged_dir,fname)
     arcpy.management.PivotTable(input_table, "ID", "Year", field, pivottable)
@@ -207,19 +224,7 @@ def user_inputs():
     threshold = arcpy.GetParameterAsText(7)
     return maindir, shapefile,column_name,main_analysis,biomass_analysis,filename,threshold
 #--------------------------
-def inputfile():
-    # set input files
-    hansenareamosaic = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area'
-    biomassmosaic = r'H:\gfw_gis_team_data\whrc_carbon\whrc_carbon.gdb\whrc_carbon'
-    tcdmosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_30m_2000'
-    hansenareamosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area_30m'
-    lossyearmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\lossdata_2001_2014'
-    tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2000'
-    # tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2010'
-    adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
-    adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
-    adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
-    grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
+
 # set input files
 hansenareamosaic = arcpy.GetParameterAsText(8)
 biomassmosaic = arcpy.GetParameterAsText(9)
@@ -227,13 +232,15 @@ tcdmosaic30m = arcpy.GetParameterAsText(10)
 hansenareamosaic30m = arcpy.GetParameterAsText(11)
 lossyearmosaic = arcpy.GetParameterAsText(12)
 tcdmosaic = arcpy.GetParameterAsText(13)
-remaptable = arcpy.GetParameterAsText(14)
-remapfunction = arcpy.GetParameterAsText(15)
+# remaptable = arcpy.GetParameterAsText(14)
+# remapfunction = arcpy.GetParameterAsText(15)
+remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable_test.dbf")
+remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction_test.rft.xml")
 # get user inputs
 maindir, shapefile, column_name,main_analysis,biomass_analysis,filename,threshold = user_inputs()
 
 # remap tcd mosaic based on user input
-remapmosaic(threshold,remaptable)
+remapmosaic(threshold,remaptable,remapfunction)
 
 # set up directories
 arcpy.env.workspace = maindir
@@ -263,9 +270,22 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
         feature_count += 1
         fc_geo = row[0]
         column_name = str(row[1])
+        if " " in column_name:
+            column_name2 = column_name.replace(" ","_")
+        if column_name[0].isdigit():
+            column_name2 = "x"+str(column_name)
         arcpy.AddMessage( column_name + " " + str(feature_count)+"/"+str(total_features))
-        loss_and_biomass(main_analysis)
-        biomass30m(biomass_analysis)
+        area_fc_output = os.path.join(outdir, column_name2 + "_" + filename + "_area")
+        arcpy.AddMessage( area_fc_output)
+        if not arcpy.Exists(area_fc_output):
+            loss_and_biomass(main_analysis)
+        else:
+            arcpy.AddMessage( column_name + " already exists, passing")
+        biomass30table = os.path.join(outdir, column_name2 + "_" + filename +"_biomass_30m")
+        if not arcpy.Exists(biomass30table):
+            biomass30m(biomass_analysis)
+        else:
+            arcpy.AddMessage( column_name + " already exists, passing")
         arcpy.AddMessage(option_list)
         arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
     del cursor
@@ -277,12 +297,17 @@ for option in option_list:
 
 if "area" in option_list:
     arcpy.env.workspace = merged_dir
-    area = arcpy.ListTables("*_area_merge")[0]
+    area = arcpy.ListTables(filename+"_area_merge")[0]
     arcpy.AddMessage(  "create loss pivot")
-    pivotTable(area,"SUM","area_pivot")
+    pivotTable(area,"SUM",filename + "_area_pivot")
 if "biomass_max" in option_list:
     arcpy.AddMessage(  "calc average biomass")
-    avgBiomass(merged_dir,column_name)
+    avgBiomass(merged_dir,column_name,filename)
     arcpy.AddMessage(  "create biomass pivot")
-    pivotTable(area,"avgBiomass","biomass_pivot")
+    pivotTable(area,"avgBiomass",filename + "_biomass_pivot")
     arcpy.AddMessage(  "\n total elapsed time: " + str(datetime.datetime.now() - start))
+# clean up temp files
+arcpy.env.workspace = merged_dir
+temp = arcpy.ListTables("*merge")
+for t in temp:
+    arcpy.Delete_management(t)
