@@ -234,8 +234,8 @@ lossyearmosaic = arcpy.GetParameterAsText(12)
 tcdmosaic = arcpy.GetParameterAsText(13)
 # remaptable = arcpy.GetParameterAsText(14)
 # remapfunction = arcpy.GetParameterAsText(15)
-remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable_test.dbf")
-remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction_test.rft.xml")
+remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable.dbf")
+remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction.rft.xml")
 # get user inputs
 maindir, shapefile, column_name,main_analysis,biomass_analysis,filename,threshold = user_inputs()
 
@@ -270,22 +270,10 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
         feature_count += 1
         fc_geo = row[0]
         column_name = str(row[1])
-        if " " in column_name:
-            column_name2 = column_name.replace(" ","_")
-        if column_name[0].isdigit():
-            column_name2 = "x"+str(column_name)
-        arcpy.AddMessage( column_name + " " + str(feature_count)+"/"+str(total_features))
-        area_fc_output = os.path.join(outdir, column_name2 + "_" + filename + "_area")
-        arcpy.AddMessage( area_fc_output)
-        if not arcpy.Exists(area_fc_output):
-            loss_and_biomass(main_analysis)
-        else:
-            arcpy.AddMessage( column_name + " already exists, passing")
-        biomass30table = os.path.join(outdir, column_name2 + "_" + filename +"_biomass_30m")
-        if not arcpy.Exists(biomass30table):
-            biomass30m(biomass_analysis)
-        else:
-            arcpy.AddMessage( column_name + " already exists, passing")
+
+        loss_and_biomass(main_analysis)
+        biomass30m(biomass_analysis)
+
         arcpy.AddMessage(option_list)
         arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
     del cursor
