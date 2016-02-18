@@ -130,15 +130,13 @@ def avgBiomass(merged_dir,column_name,filename):
     arcpy.AddField_management(min,"uID","TEXT")
     arcpy.CalculateField_management(min,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
 
-
-
     arcpy.AddField_management(area,"uID","TEXT")
     arcpy.CalculateField_management(area,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
 
     arcpy.JoinField_management(area,"uID",max,"uID",["L"])
     arcpy.JoinField_management(area,"uID",min,"uID",["S"])
     arcpy.AddField_management(area,"avgBiomass","DOUBLE")
-    arcpy.CalculateField_management(area,"avgBiomass","!SUM!/10000)/ !COUNT! * ( !L!/1000000)+( !SUM!/10000)/ !COUNT! * ( !S!/1000000))/2)*.5*3.67", "PYTHON_9.3", "")
+    arcpy.CalculateField_management(area,"avgBiomass","((!SUM!/10000)/!COUNT! * (!L!/1000000)+ (!SUM!/10000)/!COUNT! * ( !S!/1000000)/2)*.5*3.67", "PYTHON_9.3", "")
 def pivotTable(input_table,field,fname):
 
     pivottable = os.path.join(merged_dir,fname)
@@ -319,16 +317,17 @@ arcpy.AddMessage(  "merge tables")
 for option in option_list:
     merge_tables(outdir,option,filename,merged_dir)
 arcpy.env.workspace = merged_dir
-if "_area_" in option_list:
+area = arcpy.ListTables(filename+"_area_merge")
+if len(area)==1:
     area = arcpy.ListTables(filename+"_area_merge")[0]
     arcpy.AddMessage(  "create loss pivot")
     pivotTable(area,"SUM",filename + "_area_pivot")
-if "biomass_max" in option_list:
-    arcpy.AddMessage(  "calc average biomass")
-    avgBiomass(merged_dir,column_name,filename)
-    arcpy.AddMessage(  "create biomass pivot")
-    pivotTable(area,"avgBiomass",filename + "_biomass_pivot")
-    arcpy.AddMessage(  "\n total elapsed time: " + str(datetime.datetime.now() - start))
+    if "biomass_max" in option_list:
+        arcpy.AddMessage(  "calc average biomass")
+        avgBiomass(merged_dir,column_name,filename)
+        arcpy.AddMessage(  "create biomass pivot")
+        pivotTable(area,"avgBiomass",filename + "_biomass_pivot")
+        arcpy.AddMessage(  "\n total elapsed time: " + str(datetime.datetime.now() - start))
 if "area30m" in option_list:
     area30m = arcpy.ListTables(filename+"_area30m_merge")[0]
     arcpy.AddMessage(  "calc average 30m biomass")
