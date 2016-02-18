@@ -88,12 +88,15 @@ def merge_tables(outdir,option,filename,merged_dir):
     arcpy.AddMessage(table_list)
     final_merge_table = os.path.join(merged_dir,filename+"_"+option + "_merge")
     arcpy.AddMessage(final_merge_table)
+    arcpy.AddMessage(option)
     arcpy.Merge_management(table_list,final_merge_table)
-    if option == "area30m" or "area only":
+    if option == "area30m" or option ==  "area only":
+        arcpy.AddMessage("dictionary only to 20")
         dict =  {20:"value"}
     else:
         # delete rows where valye <15 and add Year field and update rows
         dict = {20:"no loss",21:"y2001",22:"y2002",23:"y2003",24:"y2004",25:"y2005",26:"y2006",27:"y2007",28:"y2008",29:"y2009",30:"y2010",31:"y2011",32:"y2012",33:"y2013",34:"y2014",35:"y2015",36:"y2016",37:"y2017",38:"y2018",39:"y2019",40:"y2020"}
+    arcpy.AddMessage(dict)
     arcpy.AddMessage("add field")
     arcpy.AddField_management(final_merge_table,"Year","TEXT","","",10)
     with arcpy.da.UpdateCursor(final_merge_table, ["Value","Year"]) as cursor:
@@ -142,91 +145,84 @@ def pivotTable(input_table,field,fname):
     arcpy.management.PivotTable(input_table, "ID", "Year", field, pivottable)
     # add total field
     fc = pivottable
-    if "_area30m_merge" or "area_only" in input_table:
-        pass
-    else:
-        # making a list of fields for the year columns, excluse year 0
-        arcpy.AddField_management(pivottable, "total", "DOUBLE")
-        field_prefix = "y"
-        field_list = []
-        f_list = arcpy.ListFields(fc)
-        for f in f_list:
-            if field_prefix in f.name:
-                field_list.append(f.name)
-        # use update cursor to find values and update the total field
-        rows = arcpy.UpdateCursor(fc)
-        for row in rows:
-            total = 0
-            for f in field_list:
-                total += row.getValue(f)
-            row.total = total
-            rows.updateRow(row)
-            del total
-        del rows
+
+    # making a list of fields for the year columns, excluse year 0
+    arcpy.AddField_management(pivottable, "total", "DOUBLE")
+    field_prefix = "y"
+    field_list = []
+    f_list = arcpy.ListFields(fc)
+    for f in f_list:
+        if field_prefix in f.name:
+            field_list.append(f.name)
+    # use update cursor to find values and update the total field
+    rows = arcpy.UpdateCursor(fc)
+    for row in rows:
+        total = 0
+        for f in field_list:
+            total += row.getValue(f)
+        row.total = total
+        rows.updateRow(row)
+        del total
+    del rows
 def loss_and_biomass(option):
     arcpy.env.scratchWorkspace = scratch_gdb
     table_names_27m = ["area","biomass_max","biomass_min","area_only"]
     z_stats_tbl = os.path.join(outdir, column_name + "_" + filename + "_" + table_names_27m[0])
-    if option != "none":
-        if not os.path.exists(z_stats_tbl):
-            arcpy.env.snapRaster = hansenareamosaic
-            try:
-                if option == "loss":
-                    arcpy.AddMessage(  "extracting for loss 27m")
-                    lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)
-                    table = table_names_27m[0]
-                    zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table,hansenareamosaic,column_name)
-                    if not table in option_list:
-                        option_list.append(table)
-                    del lossyr_tcd
-                if option == "loss and biomass":
-                    arcpy.AddMessage(  "extracting for loss and biomass 27m")
-                    lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)
-                    zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table_names_27m[0],hansenareamosaic,column_name)
-                    zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[1],hansenareamosaic,column_name)
-                    zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[2],hansenareamosaic,column_name)
-                    if not table_names_27m[0] in option_list:
-                        option_list.extend(table_names_27m)
-                    del lossyr_tcd
-                if option == "area only":
-                    arcpy.AddMessage(  "extracting for area only")
-                    tcd_extract = ExtractByMask(tcdmosaic,fc_geo)
-                    zonal_stats_forest(tcd_extract, hansenareamosaic, filename,table_names_27m[3],hansenareamosaic,column_name)
-                    if not table_names_27m[3] in option_list:
-                        option_list.extend(table_names_27m)
-                    del tcd_extract
-            except IOError as e:
-                arcpy.AddMessage(  "     failed")
-                error_text = "I/O error({0}): {1}".format(e.errno, e.strerror)
-                errortext = open(error_text_file,'a')
-                errortext.write(column_name + " " + str(error_text) + "\n")
-                errortext.close()
-                pass
-            except ValueError:
-                arcpy.AddMessage(  "     failed")
-                error_text="Could not convert data to an integer."
-                errortext = open(error_text_file,'a')
-                errortext.write(column_name + " " + str(error_text) + "\n")
-                errortext.close()
-                pass
-            except:
-                arcpy.AddMessage(  "     failed")
-                error_text= "Unexpected error:", sys.exc_info()
-                error_text= error_text[1][1]
-                errortext = open(error_text_file,'a')
-                errortext.write(column_name + " " + str(error_text) + "\n")
-                errortext.close()
-                pass
 
-        else:
-            arcpy.AddMessage(  "already exists")
+    if not os.path.exists(z_stats_tbl):
+        arcpy.env.snapRaster = hansenareamosaic
+        try:
+            if option == "loss":
+                arcpy.AddMessage(  "extracting for loss 27m")
+                lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)
+                table = table_names_27m[0]
+                zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table,hansenareamosaic,column_name)
+                if not table in option_list:
+                    option_list.append(table)
+                del lossyr_tcd
+            if option == "loss and biomass":
+                arcpy.AddMessage(  "extracting for loss and biomass 27m")
+                lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)
+                zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table_names_27m[0],hansenareamosaic,column_name)
+                zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[1],hansenareamosaic,column_name)
+                zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[2],hansenareamosaic,column_name)
+                if not table_names_27m[0] in option_list:
+                    option_list.extend(table_names_27m)
+                del lossyr_tcd
+            if option == "area only":
+                arcpy.AddMessage(  "extracting for area only")
+                tcd_extract = ExtractByMask(tcdmosaic,fc_geo)
+                zonal_stats_forest(tcd_extract, hansenareamosaic, filename,table_names_27m[3],hansenareamosaic,column_name)
+                if not table_names_27m[3] in option_list:
+                    option_list.extend(table_names_27m)
+                del tcd_extract
+        except IOError as e:
+            arcpy.AddMessage(  "     failed")
+            error_text = "I/O error({0}): {1}".format(e.errno, e.strerror)
+            errortext = open(error_text_file,'a')
+            errortext.write(column_name + " " + str(error_text) + "\n")
+            errortext.close()
+            pass
+        except ValueError:
+            arcpy.AddMessage(  "     failed")
+            error_text="Could not convert data to an integer."
+            errortext = open(error_text_file,'a')
+            errortext.write(column_name + " " + str(error_text) + "\n")
+            errortext.close()
+            pass
+        except:
+            arcpy.AddMessage(  "     failed")
+            error_text= "Unexpected error:", sys.exc_info()
+            error_text= error_text[1][1]
+            errortext = open(error_text_file,'a')
+            errortext.write(column_name + " " + str(error_text) + "\n")
+            errortext.close()
+            pass
     else:
-        arcpy.AddMessage(  "passing")
-        pass
-
+        arcpy.AddMessage(  "already exists")
     return option_list
-def biomass30m(option):
 
+def biomass30m(option):
     if option == "biomass":
         # prepare value and zone raster for 30m data
         arcpy.env.snapRaster = hansenareamosaic30m
@@ -255,19 +251,19 @@ def user_inputs():
 
     main_analysis= arcpy.GetParameterAsText(4)
     biomass_analysis = arcpy.GetParameterAsText(5)
-    if main_analysis == "area only":
-        input_zone = arcpy.GetParameterAsText(6)
-    threshold = arcpy.GetParameterAsText(7)
+
+    threshold = arcpy.GetParameterAsText(6)
     return maindir, shapefile,column_name,main_analysis,biomass_analysis,filename,threshold
 #--------------------------
 
 # set input files
-hansenareamosaic = arcpy.GetParameterAsText(8)
-biomassmosaic = arcpy.GetParameterAsText(9)
-tcdmosaic30m = arcpy.GetParameterAsText(10)
-hansenareamosaic30m = arcpy.GetParameterAsText(11)
-lossyearmosaic = arcpy.GetParameterAsText(12)
-tcdmosaic = arcpy.GetParameterAsText(13)
+hansenareamosaic = arcpy.GetParameterAsText(7)
+biomassmosaic = arcpy.GetParameterAsText(8)
+tcdmosaic30m = arcpy.GetParameterAsText(9)
+hansenareamosaic30m = arcpy.GetParameterAsText(10)
+lossyearmosaic = arcpy.GetParameterAsText(11)
+tcdmosaic = arcpy.GetParameterAsText(12)
+overwrite = arcpy.GetParameterAsText(13)
 # remaptable = arcpy.GetParameterAsText(14)
 # remapfunction = arcpy.GetParameterAsText(15)
 remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable.dbf")
@@ -298,23 +294,46 @@ if not os.path.exists(merged_dir):
 total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
 start = datetime.datetime.now()
 option_list = []
-arcpy.AddMessage(column_name )
+arcpy.AddMessage(column_name)
+
 with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
     feature_count = 0
     for row in cursor:
         fctime = datetime.datetime.now()
         feature_count += 1
         fc_geo = row[0]
+
+        # overwite outputs yes/no
         column_name = str(row[1])
-        # test this for dev branch
+        column_name2 = str(row[1])
+
         if " " in column_name:
             column_name2 = column_name.replace(" ","_")
         if column_name[0].isdigit():
             column_name2 = "x"+str(column_name)
         # skip loss and biomass if area file exists
+        table_names = {"area only":"area_only","loss and biomass":"area","biomass":"biomass30m","loss":"area"}
+        arcpy.AddMessage(overwrite)
+        if overwrite == "false":
+            if main_analysis != "none":
+                analysisfilename = table_names[main_analysis]
+                z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + analysisfilename)
+                arcpy.AddMessage(z_stats_tbl)
+                if not arcpy.Exists(z_stats_tbl):
+                    loss_and_biomass(main_analysis)
+                else:
+                    arcpy.AddMessage(main_analysis + " already exists")
+            analysisfilename2 = table_names[biomass_analysis]
+            z_stats_tbl2 = os.path.join(outdir, column_name2 + "_" + filename + "_" + analysisfilename2)
+            arcpy.AddMessage(z_stats_tbl2)
+            if not arcpy.Exists(z_stats_tbl2):
+                biomass30m(biomass_analysis)
+            else:
+                arcpy.AddMessage(biomass_analysis + " already exists")
+        if overwrite == "true":
+            loss_and_biomass(main_analysis)
+            biomass30m(biomass_analysis)
 
-        loss_and_biomass(main_analysis)
-        biomass30m(biomass_analysis)
 
         arcpy.AddMessage(option_list)
         arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
