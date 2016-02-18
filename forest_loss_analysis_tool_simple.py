@@ -82,8 +82,6 @@ def biomass30m_calcs(merged_dir,column_name,filename):
     arcpy.JoinField_management(area30,"uID",biomass30,"uID",["bio30m"])
     arcpy.AddField_management(area30,"Mgha30m","DOUBLE")
     arcpy.CalculateField_management(area30,"Mgha30m","!bio30m!/(!SUM!/10000)", "PYTHON_9.3", "")
-
-
 def merge_tables(outdir,option,filename,merged_dir):
     arcpy.env.workspace = outdir
     table_list = arcpy.ListTables("*"+filename+"_"+option)
@@ -91,9 +89,11 @@ def merge_tables(outdir,option,filename,merged_dir):
     final_merge_table = os.path.join(merged_dir,filename+"_"+option + "_merge")
     arcpy.AddMessage(final_merge_table)
     arcpy.Merge_management(table_list,final_merge_table)
-    # delete rows where valye <15 and add Year field and update rows
-    # dict = {15:"no loss",16:"y2001",17:"y2002",18:"y2003",19:"y2004",20:"y2005",21:"y2006",22:"y2007",23:"y2008",24:"y2009",25:"y2010",26:"y2011",27:"y2012",28:"y2013",29:"y2014"}
-    dict = {20:"no loss",21:"y2001",22:"y2002",23:"y2003",24:"y2004",25:"y2005",26:"y2006",27:"y2007",28:"y2008",29:"y2009",30:"y2010",31:"y2011",32:"y2012",33:"y2013",34:"y2014",35:"y2015",36:"y2016",37:"y2017",38:"y2018",39:"y2019",40:"y2020"}
+    if option == "area30m" or "area only":
+        dict =  {20:"value"}
+    else:
+        # delete rows where valye <15 and add Year field and update rows
+        dict = {20:"no loss",21:"y2001",22:"y2002",23:"y2003",24:"y2004",25:"y2005",26:"y2006",27:"y2007",28:"y2008",29:"y2009",30:"y2010",31:"y2011",32:"y2012",33:"y2013",34:"y2014",35:"y2015",36:"y2016",37:"y2017",38:"y2018",39:"y2019",40:"y2020"}
     arcpy.AddMessage("add field")
     arcpy.AddField_management(final_merge_table,"Year","TEXT","","",10)
     with arcpy.da.UpdateCursor(final_merge_table, ["Value","Year"]) as cursor:
@@ -138,12 +138,11 @@ def avgBiomass(merged_dir,column_name,filename):
     arcpy.AddField_management(area,"avgBiomass","DOUBLE")
     arcpy.CalculateField_management(area,"avgBiomass","((!SUM!/10000)/!COUNT! * (!L!/1000000)+ (!SUM!/10000)/!COUNT! * ( !S!/1000000)/2)*.5*3.67", "PYTHON_9.3", "")
 def pivotTable(input_table,field,fname):
-
     pivottable = os.path.join(merged_dir,fname)
     arcpy.management.PivotTable(input_table, "ID", "Year", field, pivottable)
     # add total field
     fc = pivottable
-    if "_area30m_merge" in input_table:
+    if "_area30m_merge" or "area_only" in input_table:
         pass
     else:
         # making a list of fields for the year columns, excluse year 0
@@ -166,27 +165,36 @@ def pivotTable(input_table,field,fname):
         del rows
 def loss_and_biomass(option):
     arcpy.env.scratchWorkspace = scratch_gdb
-    table_names_27m = ["area","biomass_max","biomass_min"]
+    table_names_27m = ["area","biomass_max","biomass_min","area_only"]
     z_stats_tbl = os.path.join(outdir, column_name + "_" + filename + "_" + table_names_27m[0])
     if option != "none":
         if not os.path.exists(z_stats_tbl):
             arcpy.env.snapRaster = hansenareamosaic
-            arcpy.AddMessage(  "extracting for loss and biomass 27m")
-            lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)
             try:
                 if option == "loss":
+                    arcpy.AddMessage(  "extracting for loss 27m")
+                    lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)
                     table = table_names_27m[0]
                     zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table,hansenareamosaic,column_name)
                     if not table in option_list:
                         option_list.append(table)
+                    del lossyr_tcd
                 if option == "loss and biomass":
+                    arcpy.AddMessage(  "extracting for loss and biomass 27m")
+                    lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)
                     zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename,table_names_27m[0],hansenareamosaic,column_name)
                     zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[1],hansenareamosaic,column_name)
                     zonal_stats_forest(lossyr_tcd, biomassmosaic, filename,table_names_27m[2],hansenareamosaic,column_name)
                     if not table_names_27m[0] in option_list:
                         option_list.extend(table_names_27m)
-
-                del lossyr_tcd
+                    del lossyr_tcd
+                if option == "area only":
+                    arcpy.AddMessage(  "extracting for area only")
+                    tcd_extract = ExtractByMask(tcdmosaic,fc_geo)
+                    zonal_stats_forest(tcd_extract, hansenareamosaic, filename,table_names_27m[3],hansenareamosaic,column_name)
+                    if not table_names_27m[3] in option_list:
+                        option_list.extend(table_names_27m)
+                    del tcd_extract
             except IOError as e:
                 arcpy.AddMessage(  "     failed")
                 error_text = "I/O error({0}): {1}".format(e.errno, e.strerror)
@@ -316,6 +324,9 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
 arcpy.AddMessage(  "merge tables")
 for option in option_list:
     merge_tables(outdir,option,filename,merged_dir)
+
+# if area was calculated, create area pivot table
+# if biomass max exists, then need to average biomass then create biomass pivot table
 arcpy.env.workspace = merged_dir
 area = arcpy.ListTables(filename+"_area_merge")
 if len(area)==1:
@@ -327,7 +338,7 @@ if len(area)==1:
         avgBiomass(merged_dir,column_name,filename)
         arcpy.AddMessage(  "create biomass pivot")
         pivotTable(area,"avgBiomass",filename + "_biomass_pivot")
-        arcpy.AddMessage(  "\n total elapsed time: " + str(datetime.datetime.now() - start))
+
 if "area30m" in option_list:
     area30m = arcpy.ListTables(filename+"_area30m_merge")[0]
     arcpy.AddMessage(  "calc average 30m biomass")
@@ -335,7 +346,12 @@ if "area30m" in option_list:
     arcpy.AddMessage(  "create 30m biomass pivot")
     pivotTable(area30m,"Mgha30m",filename + "_biomass30m_pivot")
     pivotTable(area30m,"SUM",filename + "_area30m_pivot")
-    arcpy.AddMessage(  "\n total elapsed time: " + str(datetime.datetime.now() - start))
+
+if "area_only" in option_list:
+    areaonly =arcpy.ListTables(filename+"_area_only_merge")[0]
+    arcpy.AddMessage(  "create area only pivot")
+    pivotTable(areaonly,"SUM",filename + "_area_only_pivot")
+
 # clean up temp files
 arcpy.env.workspace = merged_dir
 temp = arcpy.ListTables("*merge")
