@@ -273,11 +273,12 @@ maindir, shapefile, column_name,main_analysis,biomass_analysis,filename,threshol
 
 # remap tcd mosaic based on user input
 remapmosaic(threshold,remaptable,remapfunction)
-
+arcpy.env.outputCoordinateSystem = arcpy.SpatialReference("WGS 1984")
 # set up directories
 arcpy.env.workspace = maindir
 arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = "TRUE"
+
 scratch_gdb = os.path.join(maindir, "scratch.gdb")
 if not os.path.exists(scratch_gdb):
     arcpy.CreateFileGDB_management(maindir, "scratch.gdb")
@@ -303,10 +304,9 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
         feature_count += 1
         fc_geo = row[0]
 
-        # overwite outputs yes/no
         column_name = str(row[1])
         column_name2 = str(row[1])
-
+        arcpy.AddMessage(column_name)
         if " " in column_name:
             column_name2 = column_name.replace(" ","_")
         if column_name[0].isdigit():
@@ -315,21 +315,24 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
         table_names = {"area only":"area_only","loss and biomass":"area","biomass":"biomass30m","loss":"area"}
         arcpy.AddMessage(overwrite)
         if overwrite == "false":
+
             if main_analysis != "none":
                 analysisfilename = table_names[main_analysis]
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + analysisfilename)
+                arcpy.AddMessage("line321")
                 arcpy.AddMessage(z_stats_tbl)
                 if not arcpy.Exists(z_stats_tbl):
                     loss_and_biomass(main_analysis)
                 else:
                     arcpy.AddMessage(main_analysis + " already exists")
-            analysisfilename2 = table_names[biomass_analysis]
-            z_stats_tbl2 = os.path.join(outdir, column_name2 + "_" + filename + "_" + analysisfilename2)
-            arcpy.AddMessage(z_stats_tbl2)
-            if not arcpy.Exists(z_stats_tbl2):
-                biomass30m(biomass_analysis)
-            else:
-                arcpy.AddMessage(biomass_analysis + " already exists")
+            if biomass_analysis != "none":
+                analysisfilename2 = table_names[biomass_analysis]
+                z_stats_tbl2 = os.path.join(outdir, column_name2 + "_" + filename + "_" + analysisfilename2)
+                arcpy.AddMessage(z_stats_tbl2)
+                if not arcpy.Exists(z_stats_tbl2):
+                    biomass30m(biomass_analysis)
+                else:
+                    arcpy.AddMessage(biomass_analysis + " already exists")
         if overwrite == "true":
             loss_and_biomass(main_analysis)
             biomass30m(biomass_analysis)
