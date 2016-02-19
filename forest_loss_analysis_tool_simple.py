@@ -72,7 +72,6 @@ def biomass30m_calcs(merged_dir,column_name,filename):
     arcpy.DeleteField_management(biomass30,"SUM")
 
     column_name = "!"+column_name+"!"
-    expression = column_name + '"_"+str(!Value!)'
     arcpy.AddField_management(biomass30,"uID","TEXT")
     arcpy.CalculateField_management(biomass30,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
 
@@ -85,10 +84,7 @@ def biomass30m_calcs(merged_dir,column_name,filename):
 def merge_tables(outdir,option,filename,merged_dir):
     arcpy.env.workspace = outdir
     table_list = arcpy.ListTables("*"+filename+"_"+option)
-    arcpy.AddMessage(table_list)
     final_merge_table = os.path.join(merged_dir,filename+"_"+option + "_merge")
-    arcpy.AddMessage(final_merge_table)
-    arcpy.AddMessage(option)
     arcpy.Merge_management(table_list,final_merge_table)
     if option == "area30m" or option ==  "area only":
         arcpy.AddMessage("dictionary only to 20")
@@ -96,8 +92,6 @@ def merge_tables(outdir,option,filename,merged_dir):
     else:
         # delete rows where valye <15 and add Year field and update rows
         dict = {20:"no loss",21:"y2001",22:"y2002",23:"y2003",24:"y2004",25:"y2005",26:"y2006",27:"y2007",28:"y2008",29:"y2009",30:"y2010",31:"y2011",32:"y2012",33:"y2013",34:"y2014",35:"y2015",36:"y2016",37:"y2017",38:"y2018",39:"y2019",40:"y2020"}
-    arcpy.AddMessage(dict)
-    arcpy.AddMessage("add field")
     arcpy.AddField_management(final_merge_table,"Year","TEXT","","",10)
     with arcpy.da.UpdateCursor(final_merge_table, ["Value","Year"]) as cursor:
         for row in cursor:
@@ -108,10 +102,9 @@ def merge_tables(outdir,option,filename,merged_dir):
                     row[1] = dict[v]
                     cursor.updateRow(row)
         del cursor
-# average the min/max biomass tables
 def avgBiomass(merged_dir,column_name,filename):
+    # average the min/max biomass tables
     arcpy.env.workspace = merged_dir
-
     area = arcpy.ListTables("*"+filename+"_area_merge")[0]
     max = arcpy.ListTables("*"+filename+"_biomass_max_merge")[0]
     min = arcpy.ListTables("*"+filename+"_biomass_min_merge")[0]
@@ -120,11 +113,8 @@ def avgBiomass(merged_dir,column_name,filename):
     arcpy.CalculateField_management(max,"L","!SUM!", "PYTHON_9.3", "")
     arcpy.DeleteField_management(max,"SUM")
 
-    column_name = "!"+column_name+"!"
-    expression = column_name + '"_"+str(!Value!)'
     arcpy.AddField_management(max,"uID","TEXT")
     arcpy.CalculateField_management(max,"uID","""!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
-
 
     arcpy.AddField_management(min,"S","DOUBLE")
     arcpy.CalculateField_management(min,"S","!SUM!", "PYTHON_9.3", "")
@@ -145,7 +135,6 @@ def pivotTable(input_table,field,fname):
     arcpy.management.PivotTable(input_table, "ID", "Year", field, pivottable)
     # add total field
     fc = pivottable
-
     # making a list of fields for the year columns, excluse year 0
     arcpy.AddField_management(pivottable, "total", "DOUBLE")
     field_prefix = "y"
@@ -168,7 +157,6 @@ def loss_and_biomass(option):
     arcpy.env.scratchWorkspace = scratch_gdb
     table_names_27m = ["area","biomass_max","biomass_min","area_only"]
     z_stats_tbl = os.path.join(outdir, column_name + "_" + filename + "_" + table_names_27m[0])
-
     if not os.path.exists(z_stats_tbl):
         arcpy.env.snapRaster = hansenareamosaic
         try:
@@ -221,7 +209,6 @@ def loss_and_biomass(option):
     else:
         arcpy.AddMessage(  "already exists")
     return option_list
-
 def biomass30m(option):
     if option == "biomass":
         # prepare value and zone raster for 30m data
@@ -239,7 +226,6 @@ def biomass30m(option):
         zonal_stats_forest(tcdmosaic30m, outPlus, filename, "biomass30m",hansenareamosaic30m,column_name)
         if not "area30m" in option_list:
             option_list.extend(["area30m","biomass30m"])
-        time = str(datetime.datetime.now() - start)
     if option == "none":
         pass
     return option_list
@@ -248,10 +234,8 @@ def user_inputs():
     shapefile = arcpy.GetParameterAsText(1)
     filename = GetParameterAsText(2)
     column_name=arcpy.GetParameterAsText(3)
-
     main_analysis= arcpy.GetParameterAsText(4)
     biomass_analysis = arcpy.GetParameterAsText(5)
-
     threshold = arcpy.GetParameterAsText(6)
     return maindir, shapefile,column_name,main_analysis,biomass_analysis,filename,threshold
 #--------------------------
@@ -264,8 +248,7 @@ hansenareamosaic30m = arcpy.GetParameterAsText(10)
 lossyearmosaic = arcpy.GetParameterAsText(11)
 tcdmosaic = arcpy.GetParameterAsText(12)
 overwrite = arcpy.GetParameterAsText(13)
-# remaptable = arcpy.GetParameterAsText(14)
-# remapfunction = arcpy.GetParameterAsText(15)
+
 remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable.dbf")
 remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction.rft.xml")
 # get user inputs
@@ -273,8 +256,9 @@ maindir, shapefile, column_name,main_analysis,biomass_analysis,filename,threshol
 
 # remap tcd mosaic based on user input
 remapmosaic(threshold,remaptable,remapfunction)
-arcpy.env.outputCoordinateSystem = arcpy.SpatialReference("WGS 1984")
+
 # set up directories
+arcpy.env.outputCoordinateSystem = arcpy.SpatialReference("WGS 1984")
 arcpy.env.workspace = maindir
 arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = "TRUE"
@@ -295,7 +279,6 @@ if not os.path.exists(merged_dir):
 total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
 start = datetime.datetime.now()
 option_list = []
-arcpy.AddMessage(column_name)
 
 with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
     feature_count = 0
@@ -306,7 +289,6 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
 
         column_name = str(row[1])
         column_name2 = str(row[1])
-        arcpy.AddMessage(column_name)
         if " " in column_name:
             column_name2 = column_name.replace(" ","_")
         if column_name[0].isdigit():
@@ -319,8 +301,7 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
             if main_analysis != "none":
                 analysisfilename = table_names[main_analysis]
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + analysisfilename)
-                arcpy.AddMessage("line321")
-                arcpy.AddMessage(z_stats_tbl)
+
                 if not arcpy.Exists(z_stats_tbl):
                     loss_and_biomass(main_analysis)
                 else:
@@ -328,7 +309,7 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
             if biomass_analysis != "none":
                 analysisfilename2 = table_names[biomass_analysis]
                 z_stats_tbl2 = os.path.join(outdir, column_name2 + "_" + filename + "_" + analysisfilename2)
-                arcpy.AddMessage(z_stats_tbl2)
+
                 if not arcpy.Exists(z_stats_tbl2):
                     biomass30m(biomass_analysis)
                 else:
@@ -337,8 +318,6 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
             loss_and_biomass(main_analysis)
             biomass30m(biomass_analysis)
 
-
-        arcpy.AddMessage(option_list)
         arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
     del cursor
 
@@ -375,6 +354,7 @@ if "area_only" in option_list:
     pivotTable(areaonly,"SUM",filename + "_area_only_pivot")
 
 # clean up temp files
+arcpy.AddMessage("cleaning up temps")
 arcpy.env.workspace = merged_dir
 temp = arcpy.ListTables("*merge")
 for t in temp:
