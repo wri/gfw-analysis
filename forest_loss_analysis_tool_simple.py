@@ -298,10 +298,10 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", column_name)) as cursor:
         fctime = datetime.datetime.now()
         feature_count += 1
         fc_geo = row[0]
-
-        column_name = unicode(column_name,"ascii","ignore")
-        # column_name = correctfcname(str(row[1]))
-        # column_name2 = correctfcname(column_name)
+        c = row[1]
+        c2 = c.encode("utf-8","ignore")
+        column_name = unicode(c2,"ascii","ignore")
+        column_name2 = correctfcname(column_name)
         arcpy.AddMessage(column_name2)
         # skip loss and biomass if area file exists
         table_names = {"area only":"area_only","loss and biomass":"area","biomass":"biomass30m","loss":"area"}
