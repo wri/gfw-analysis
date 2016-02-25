@@ -272,13 +272,13 @@ if not os.path.exists(scratch_gdb):
     arcpy.CreateFileGDB_management(maindir, "scratch.gdb")
 arcpy.env.scratchWorkspace = scratch_gdb
 error_text_file = os.path.join(maindir,'errors.txt')
-outdir = os.path.join(maindir, "outdir.gdb")
+outdir = os.path.join(maindir, "temp.gdb")
 if not os.path.exists(outdir):
-    arcpy.CreateFileGDB_management(maindir, "outdir.gdb")
+    arcpy.CreateFileGDB_management(maindir, "temp.gdb")
 
-merged_dir = os.path.join(maindir, "merged.gdb")
+merged_dir = os.path.join(maindir, "final.gdb")
 if not os.path.exists(merged_dir):
-    arcpy.CreateFileGDB_management(maindir, "merged.gdb")
+    arcpy.CreateFileGDB_management(maindir, "final.gdb")
 # get feature count, set up to start looping
 total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
 start = datetime.datetime.now()
@@ -369,3 +369,5 @@ arcpy.env.workspace = merged_dir
 temp = arcpy.ListTables("*merge")
 for t in temp:
     arcpy.Delete_management(t)
+arcpy.Delete_management(outdir)
+arcpy.Delete_management(scratch_gdb)
