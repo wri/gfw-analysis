@@ -35,10 +35,10 @@ def remapmosaic(threshold,remaptable,remapfunction):
     arcpy.EditRasterFunction_management(
      tcdmosaic, "EDIT_MOSAIC_DATASET",
      "INSERT", remapfunction)
-
-    arcpy.EditRasterFunction_management(
-     tcdmosaic30m, "EDIT_MOSAIC_DATASET",
-     "INSERT", remapfunction)
+    if main_analysis == "loss and biomass" or biomass_analysis == "biomass":
+        arcpy.EditRasterFunction_management(
+         tcdmosaic30m, "EDIT_MOSAIC_DATASET",
+         "INSERT", remapfunction)
 def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapraster,column_name):
     arcpy.AddMessage(  "zonal stats")
     arcpy.env.snapRaster = snapraster
@@ -255,11 +255,12 @@ overwrite = arcpy.GetParameterAsText(13)
 
 remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable.dbf")
 remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction.rft.xml")
+arcpy.AddMessage(remapfunction)
 # get user inputs
 maindir, shapefile, column_name,main_analysis,biomass_analysis,filename,threshold = user_inputs()
 
 # remap tcd mosaic based on user input
-# remapmosaic(threshold,remaptable,remapfunction)
+remapmosaic(threshold,remaptable,remapfunction)
 
 # set up directories
 arcpy.env.outputCoordinateSystem = arcpy.SpatialReference("WGS 1984")
