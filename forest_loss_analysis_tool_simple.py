@@ -31,7 +31,7 @@ def remapmosaic(threshold,remaptable,remapfunction):
         row.output = output
         rows.updateRow(row)
     del rows
-
+    arcpy.AddMessage(remapfunction)
     arcpy.EditRasterFunction_management(
      tcdmosaic, "EDIT_MOSAIC_DATASET",
      "INSERT", remapfunction)
