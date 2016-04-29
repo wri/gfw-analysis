@@ -11,6 +11,7 @@ from dictionaries import dict
 def remapmosaic(threshold,remaptable,remapfunction):
 
     if main_analysis != "none":
+
         arcpy.AddMessage("removing potential existing function from tcd 27m")
         # remove potential existing function
         arcpy.EditRasterFunction_management(
@@ -288,7 +289,7 @@ def correctfcname(column_name):
     # column_name = unicode(column_name,"ascii","ignore")
     if column_name[0].isdigit():
         column_name = "x"+str(column_name)
-    bad = [" ","-",'/', ':', '*', '?', '"', '<', '>', '|']
+    bad = [" ","-",'/', ':', '*', '?', '"', '<', '>', '|','.']
     for char in bad:
         column_name = column_name.replace(char,"_")
     return  column_name
