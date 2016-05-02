@@ -150,7 +150,12 @@ def pivotTable(input_table,field,fname):
     for row in rows:
         total = 0
         for f in field_list:
-            total += row.getValue(f)
+            arcpy.AddMessage(row.getValue(f))
+            # if a year has value of "<null>" skip it, else it will fail
+            if row.getValue(f) == None:
+                pass
+            else:
+                total += row.getValue(f)
         row.total = total
         rows.updateRow(row)
         del total
