@@ -142,12 +142,12 @@ def user_inputs():
 #--------------------------
 
 # set input files
-hansenareamosaic = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area'
-biomassmosaic = r'H:\gfw_gis_team_data\whrc_carbon\whrc_carbon.gdb\whrc_carbon'
-tcdmosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_30m_2000'
-hansenareamosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area_30m'
-lossyearmosaic = r'D:\_sam\mosaics.gdb\lossdata_2001_2014_remp'
-tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2010'
+hansenareamosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area'
+biomassmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\biomass'
+tcdmosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\tcd_30m'
+hansenareamosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area_30m'
+lossyearmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\loss_year'
+tcdmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\tcd'
 # tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2010'
 adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
 adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'

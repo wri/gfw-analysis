@@ -51,7 +51,7 @@ def loss_and_biomass(option):
             try:
                 # lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)*Raster(glad_alerts)
                 arcpy.AddMessage("extracting")
-                lossyr_tcd = ExtractByMask(glad_alerts,fc_geo)*Raster(tcdmosaic)
+                lossyr_tcd = ExtractByMask(glad_alerts,fc_geo)*Raster(tcdmosaic)*Raster(idn_prf)
                 # arcpy.AddMessage("saving")
                 # lossyr_tcd.save(r'D:\_sam\glad_alerts\lossyear2.tif')
                 if option == "loss":
@@ -115,7 +115,7 @@ def biomass30m(option):
         arcpy.AddMessage(  "extracting biomass")
         # prepare value and zone raster for 30m data glad_alerts
 
-        outExtractbyMask = ExtractByMask(glad_alerts,fc_geo)*Raster(biomassmosaic)
+        outExtractbyMask = ExtractByMask(glad_alerts,fc_geo)*Raster(biomassmosaic)*Raster(idn_prf)
         area_extract = ExtractByMask(glad_alerts,fc_geo)*Raster(hansenareamosaic30m)
         outPlus =outExtractbyMask*(Raster(hansenareamosaic30m)/10000)
 
@@ -149,19 +149,19 @@ def user_inputs():
 #--------------------------
 
 # set input files
-hansenareamosaic = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area'
-
-biomassmosaic = r'H:\gfw_gis_team_data\whrc_carbon\whrc_carbon.gdb\whrc_carbon'
-tcdmosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_30m_2000'
-hansenareamosaic30m = r'H:\gfw_gis_team_data\mosaics.gdb\hansen_area_30m'
-lossyearmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\lossdata_2001_2014'
-tcdmosaic = r'D:\_sam\glad_alerts\New File Geodatabase.gdb\tcd_2000_remap'
+hansenareamosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area'
+biomassmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\biomass'
+tcdmosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\tcd_30m_25tcd'
+hansenareamosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area_30m'
+lossyearmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\loss_year'
+tcdmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\tcd_25tcd'
 # tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2010'
 adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
 adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
 adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
 grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
-glad_alerts = r'D:\_sam\glad_alerts\New File Geodatabase.gdb\glad_day_remap'
+glad_alerts = r'D:\Users\sgibbes\glad_alerts\New File Geodatabase.gdb\glad_day_remap'
+idn_prf = r'D:\Users\sgibbes\idn_primary_proj_resample_clip_reclass.tif'
 maindir, boundary1, area_type,column_name,main_analysis,biomass_analysis,boundary_id,analysis_boundary,admin_level,column_calc,admin_file = user_inputs()
 
 arcpy.env.workspace = maindir

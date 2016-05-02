@@ -11,7 +11,7 @@ outdir = os.path.dirname(shapefile)
 proj_name = os.path.basename(shapefile).split(".")[0]+"_proj"
 
 # create geodatabase to store the projected file
-gdb_name = "scratch.gdb"
+gdb_name = "scratch2.gdb"
 arcpy.CreateFileGDB_management(outdir, gdb_name)
 gdb = os.path.join(outdir,gdb_name)
 outproj = os.path.join(gdb,proj_name)
