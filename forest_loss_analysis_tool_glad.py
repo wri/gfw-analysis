@@ -136,6 +136,7 @@ def user_inputs():
     main_analysis= arcpy.GetParameterAsText(3)
     biomass_analysis = arcpy.GetParameterAsText(5)
     analysis_boundary  = arcpy.GetParameterAsText(9) # land use boundary or country level
+
     if main_analysis == "area only":
         input_zone = arcpy.GetParameterAsText(4)
     admin_level = arcpy.GetParameterAsText(6)
@@ -160,7 +161,7 @@ adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
 adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
 adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
 grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
-glad_alerts = r'D:\Users\sgibbes\glad_alerts\glad_alerts.gdb\glad_rep_of_congo'
+glad_alerts = r'D:\Users\sgibbes\glad_alerts\glad_alerts.gdb\glad_alerts'
 idn_prf = r'D:\Users\sgibbes\idn_primary_proj_resample_clip_reclass.tif'
 maindir, boundary1, area_type,column_name,main_analysis,biomass_analysis,boundary_id,analysis_boundary,admin_level,column_calc,admin_file = user_inputs()
 

@@ -286,6 +286,7 @@ if not os.path.exists(outdir):
 merged_dir = os.path.join(maindir, "final.gdb")
 if not os.path.exists(merged_dir):
     arcpy.CreateFileGDB_management(maindir, "final.gdb")
+
 # get feature count, set up to start looping
 total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
 start = datetime.datetime.now()
