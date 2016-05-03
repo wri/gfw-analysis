@@ -51,7 +51,7 @@ def loss_and_biomass(option):
             try:
                 # lossyr_tcd = ExtractByMask(lossyearmosaic,fc_geo) + Raster(tcdmosaic)*Raster(glad_alerts)
                 arcpy.AddMessage("extracting")
-                lossyr_tcd = ExtractByMask(glad_alerts,fc_geo)*Raster(tcdmosaic)*Raster(idn_prf)
+                lossyr_tcd = ExtractByMask(glad_alerts,fc_geo)*Raster(tcdmosaic)
                 # arcpy.AddMessage("saving")
                 # lossyr_tcd.save(r'D:\_sam\glad_alerts\lossyear2.tif')
                 if option == "loss":
@@ -115,7 +115,7 @@ def biomass30m(option):
         arcpy.AddMessage(  "extracting biomass")
         # prepare value and zone raster for 30m data glad_alerts
 
-        outExtractbyMask = ExtractByMask(glad_alerts,fc_geo)*Raster(biomassmosaic)*Raster(idn_prf)
+        outExtractbyMask = ExtractByMask(glad_alerts,fc_geo)*Raster(biomassmosaic)
         area_extract = ExtractByMask(glad_alerts,fc_geo)*Raster(hansenareamosaic30m)
         outPlus =outExtractbyMask*(Raster(hansenareamosaic30m)/10000)
 
@@ -160,7 +160,7 @@ adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
 adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
 adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
 grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
-glad_alerts = r'D:\Users\sgibbes\glad_alerts\New File Geodatabase.gdb\glad_day_remap'
+glad_alerts = r'D:\Users\sgibbes\glad_alerts\glad_alerts.gdb\glad_rep_of_congo'
 idn_prf = r'D:\Users\sgibbes\idn_primary_proj_resample_clip_reclass.tif'
 maindir, boundary1, area_type,column_name,main_analysis,biomass_analysis,boundary_id,analysis_boundary,admin_level,column_calc,admin_file = user_inputs()
 
