@@ -65,12 +65,20 @@ def biomass_weight_function():
     arcpy.env.snapRaster = hansenareamosaic30m
     arcpy.env.cellSize = "MAXOF"
     arcpy.AddMessage("extracting for biomass weight")
-    outExtractbyMask = ExtractByMask(biomassmosaic,fc_geo)
-    area_extract = ExtractByMask(hansenareamosaic30m,fc_geo)
-    outPlus =outExtractbyMask*(Raster(hansenareamosaic30m)/10000)
-    zonal_stats_forest(tcdmosaic30m, area_extract, filename, "biomassweight", hansenareamosaic30m, column_name)
-    zonal_stats_forest(tcdmosaic30m, outPlus, filename, "biomass30m", hansenareamosaic30m, column_name)
-    time = str(datetime.datetime.now() - start)
+    try:
+        outExtractbyMask = ExtractByMask(biomassmosaic,fc_geo)
+        area_extract = ExtractByMask(hansenareamosaic30m,fc_geo)
+        outPlus =outExtractbyMask*(Raster(hansenareamosaic30m)/10000)
+        zonal_stats_forest(tcdmosaic30m, area_extract, filename, "biomassweight", hansenareamosaic30m, column_name)
+        zonal_stats_forest(tcdmosaic30m, outPlus, filename, "biomass30m", hansenareamosaic30m, column_name)
+    except:
+        # arcpy.AddMessage("     failed")
+        # error_text = "I/O error({0}): {1}".format(e.errno, e.strerror)
+        # errortext = open(error_text_file, 'a')
+        # errortext.write(filename + " " + str(error_text) + "\n")
+        # errortext.close()
+        pass
+
 def tree_cover_extent_function():
     arcpy.AddMessage("extracting for tree cover extent")
     tcd_extract = ExtractByMask(tcdmosaic, fc_geo)
@@ -279,9 +287,8 @@ merged_dir = os.path.join(maindir, "final.gdb")
 if not os.path.exists(merged_dir):
     arcpy.CreateFileGDB_management(maindir, "final.gdb")
 
-
 # prep boundary if necessary
-if summarize_by != "do not split up by administrative boundary": # if user is summarizing by admin boundary, need to create a new id column based on
+if summarize_by != "do not summarize by another boundary": # if user is summarizing by admin boundary, need to create a new id column based on
     # the intersection of column_name value and iso values
     shapefile,admin_column_name = boundary_prep(input_shapefile)
 else:
