@@ -51,13 +51,12 @@ def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapras
     arcpy.AddField_management(z_stats_tbl, "ID", "TEXT")
     arcpy.CalculateField_management(z_stats_tbl, "ID", "'" + column_name + "'", "PYTHON_9.3")
 def forest_loss_function():
-    arcpy.AddMessage("extracting for forest loss")
-    lossyr_tcd = ExtractByMask(lossyearmosaic, fc_geo) + Raster(tcdmosaic)
+    arcpy.env.snapRaster = hansenareamosaic
+    lossyr_tcd = ExtractByMask(lossyr,fc_geo) + Raster(tcdmosaic)
     zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename, "forest_loss", hansenareamosaic, column_name)
-    del lossyr_tcd
 def carbon_emissions_function():
-    arcpy.AddMessage("extracting for carbon emissions")
-    lossyr_tcd = ExtractByMask(lossyearmosaic, fc_geo) + Raster(tcdmosaic)
+    lossyr_tcd = ExtractByMask(lossyr, fc_geo)+tcdmosaic
+    zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename, "forest_loss", hansenareamosaic, column_name)
     zonal_stats_forest(lossyr_tcd, biomassmosaic, filename, "biomass_max", hansenareamosaic, column_name)
     zonal_stats_forest(lossyr_tcd, biomassmosaic, filename, "biomass_min", hansenareamosaic, column_name)
     del lossyr_tcd
@@ -78,7 +77,6 @@ def biomass_weight_function():
         # errortext.write(filename + " " + str(error_text) + "\n")
         # errortext.close()
         pass
-
 def tree_cover_extent_function():
     arcpy.AddMessage("extracting for tree cover extent")
     tcd_extract = ExtractByMask(tcdmosaic, fc_geo)
@@ -86,10 +84,10 @@ def tree_cover_extent_function():
     # if not "tree_cover_extent" in option_list:
     #     option_list.extend("tree_cover_extent")
     del tcd_extract
-
 def merge_tables(outdir,option,filename,merged_dir):
     arcpy.env.workspace = outdir
     table_list = arcpy.ListTables("*"+filename+"_"+option)
+    arcpy.AddMessage(table_list)
     final_merge_table = os.path.join(merged_dir,filename+"_"+option)
     arcpy.Merge_management(table_list,final_merge_table)
     if option == "biomassweight" or option ==  "area only":
@@ -109,7 +107,7 @@ def merge_tables(outdir,option,filename,merged_dir):
         del cursor
 
     # join tcd/year code table to output table and calculate clean year column
-    tcd_year_table = r'D:\Users\sgibbes\regular_script_test\2001_2019_tcd_year_codes.dbf'
+
     arcpy.JoinField_management(final_merge_table, "Value", tcd_year_table, "f1", ["year","tcd"])
 
     arcpy.CalculateField_management(final_merge_table,"Year","!year_1!", "PYTHON_9.3", "")
@@ -133,9 +131,9 @@ def merge_tables(outdir,option,filename,merged_dir):
         exp =  "> "+str(threshold)
         arcpy.CalculateField_management(final_merge_table, "tcd", '"'+exp+'"', "PYTHON_9.3", "")
     arcpy.AlterField_management(final_merge_table, "SUM", new_field_alias="area_m2")
-
 def avgBiomass(merged_dir,column_name,filename):
     # average the min/max biomass tables
+    arcpy.AddMessage("average biomass")
     arcpy.env.workspace = merged_dir
     area = arcpy.ListTables("*"+filename+"_forest_loss")[0]
     max = arcpy.ListTables("*"+filename+"_biomass_max")[0]
@@ -162,27 +160,6 @@ def avgBiomass(merged_dir,column_name,filename):
     arcpy.JoinField_management(area,"uID",min,"uID",["S"])
     arcpy.AddField_management(area,"Emissions_mtc02","DOUBLE")
     arcpy.CalculateField_management(area,"Emissions_mtc02","((!SUM!/10000)/!COUNT! * (!L!/1000000)+ (!SUM!/10000)/!COUNT! * ( !S!/1000000)/2)*.5*3.67", "PYTHON_9.3", "")
-
-    fields_to_delete = ("Value","COUNT","AREA","uID","L","S")
-    for f in fields_to_delete:
-        arcpy.DeleteField_management(area,f)
-    arcpy.Delete_management(max)
-    arcpy.Delete_management(min)
-
-    arcpy.AddField_management(area,"split_by","TEXT")
-    with arcpy.da.UpdateCursor(area, ["split_by","ID"]) as cursor:
-        for row in cursor:
-            row[0] = row[1].split("")
-            if row[0] == "0":
-                row[0] = "no loss"
-                cursor.updateRow(row)
-            if len(row[0]) == 1:
-                row[0] = "200" + row[0]
-                cursor.updateRow(row)
-            if len(row[0]) == 2:
-                row[0] = "20" + row[0]
-                cursor.updateRow(row)
-        del cursor
 def biomass30m_calcs(merged_dir,column_name,filename):
     arcpy.env.workspace = merged_dir
     area30 = arcpy.ListTables("*"+filename+"_biomassweight")[0]
@@ -207,7 +184,6 @@ def biomass30m_calcs(merged_dir,column_name,filename):
     for f in fields_to_delete:
         arcpy.DeleteField_management(area30, f)
     arcpy.Delete_management(biomass30)
-
 def user_inputs():
     maindir = arcpy.GetParameterAsText(0)
     shapefile = arcpy.GetParameterAsText(1)
@@ -247,18 +223,19 @@ def correctfcname(column_name):
     return  column_name
 #--------------------------
 # set input files
-hansenareamosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area'
-biomassmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\biomass'
-tcdmosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\tcd_30m'
-hansenareamosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area_30m'
-lossyearmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\loss_year'
-tcdmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\tcd'
-# tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2010'
-adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
-adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
-adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
-grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
-
+mosaic_location = r'C:\Users\samantha.gibbes\Documents\gis\sample_tiles\mosaics.gdb'
+admin_location = r'C:\Users\samantha.gibbes\Documents\gis\admin_boundaries\gadm27_levels.gdb'
+hansenareamosaic = os.path.join(mosaic_location,'area')
+biomassmosaic = os.path.join(mosaic_location,'carbon')
+tcdmosaic30m = os.path.join(mosaic_location,'tcd_30m')
+hansenareamosaic30m = os.path.join(mosaic_location,'area_30m')
+lossyr = os.path.join(mosaic_location,'loss')
+tcdmosaic = os.path.join(mosaic_location,'tcd')
+adm0 = os.path.join(admin_location,'adm0')
+adm1 = os.path.join(admin_location,'adm1')
+adm2 = os.path.join(admin_location,'adm2')
+grid = r'C:\Users\samantha.gibbes\Documents\gis\admin_boundaries\lossdata_footprint.shp'
+tcd_year_table = os.path.join(os.path.dirname(os.path.abspath(__file__)),"2001_2019_tcd_year_codes.dbf")
 # remap table is located in folder where this script is stored
 remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable.dbf")
 remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction.rft.xml")
@@ -318,66 +295,64 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", admin_column_name)) as cursor:
         column_name = unicode(c2,"ascii","ignore")
         column_name2 = correctfcname(column_name)
         arcpy.AddMessage(column_name2)
-        if overwrite == "true":
-            if forest_loss == "true" and carbon_emissions == "false":
-                forest_loss_function()
-            if carbon_emissions == "true":
-                forest_loss_function()
-                carbon_emissions_function()
-            if biomass_weight == "true":
-                biomass_weight_function()
-            if tree_cover_extent == "true":
-                tree_cover_extent_function()
-        if overwrite == "false":
-            if forest_loss == "true" and carbon_emissions == "false":
-                z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "forest_loss")
-                if arcpy.Exists(z_stats_tbl):
-                    arcpy.AddMessage("already exists")
-                else:
+        if column_name2 == "PER7":
+            pass
+        else:
+            if overwrite == "true":
+                if forest_loss == "true" and carbon_emissions == "false":
                     forest_loss_function()
-            if carbon_emissions == "true":
-                z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_max")
-                if arcpy.Exists(z_stats_tbl):
-                    arcpy.AddMessage("already exists")
-                else:
+                if carbon_emissions == "true":
+                    # forest_loss_function()
                     carbon_emissions_function()
-                z_stats_tbl2 = os.path.join(outdir, column_name2 + "_" + filename + "_" + "forest_loss")
-                if arcpy.Exists(z_stats_tbl2):
-                    arcpy.AddMessage("already exists")
-                else:
-                    forest_loss_function()
-            if biomass_weight == "true":
-                z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_weight")
-                if arcpy.Exists(z_stats_tbl):
-                    arcpy.AddMessage("already exists")
-                else:
+                if biomass_weight == "true":
                     biomass_weight_function()
-            if tree_cover_extent == "true":
-                z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
-                if arcpy.Exists(z_stats_tbl):
-                    arcpy.AddMessage("already exists")
-                else:
+                if tree_cover_extent == "true":
                     tree_cover_extent_function()
+            if overwrite == "false":
+                if forest_loss == "true" and carbon_emissions == "false":
+                    z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "forest_loss")
+                    if arcpy.Exists(z_stats_tbl):
+                        arcpy.AddMessage("already exists")
+                    else:
+                        forest_loss_function()
+                if carbon_emissions == "true":
+                    z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_max")
+                    if arcpy.Exists(z_stats_tbl):
+                        arcpy.AddMessage("already exists")
+                    else:
+                        carbon_emissions_function()
+                if biomass_weight == "true":
+                    z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_weight")
+                    if arcpy.Exists(z_stats_tbl):
+                        arcpy.AddMessage("already exists")
+                    else:
+                        biomass_weight_function()
+                if tree_cover_extent == "true":
+                    z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
+                    if arcpy.Exists(z_stats_tbl):
+                        arcpy.AddMessage("already exists")
+                    else:
+                        tree_cover_extent_function()
 
-            #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "forest_loss")
-            #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_max")
-            #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_weight")
-            #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
-            #     if not arcpy.Exists(z_stats_tbl):
-            #
-            #     else:
-            #         arcpy.AddMessage("already exists")
-            # if biomass_weight == "true":
-            #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_weight")
-            #     if arcpy.Exists(z_stats_tbl) and overwrite == "true":
-            #         biomass_weight_function()
-            #     else:
-            #         arcpy.AddMessage("already exists")
-            # if tree_cover_extent == "true":
-            #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
-            #     if not arcpy.Exists(z_stats_tbl):
-            #         tree_cover_extent_function()
-        arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
+                #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "forest_loss")
+                #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_max")
+                #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_weight")
+                #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
+                #     if not arcpy.Exists(z_stats_tbl):
+                #
+                #     else:
+                #         arcpy.AddMessage("already exists")
+                # if biomass_weight == "true":
+                #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomass_weight")
+                #     if arcpy.Exists(z_stats_tbl) and overwrite == "true":
+                #         biomass_weight_function()
+                #     else:
+                #         arcpy.AddMessage("already exists")
+                # if tree_cover_extent == "true":
+                #     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
+                #     if not arcpy.Exists(z_stats_tbl):
+                #         tree_cover_extent_function()
+            arcpy.AddMessage(  "     " + str(datetime.datetime.now() - fctime))
     del cursor
 
 # merge output fc tables into 1 per analysis
