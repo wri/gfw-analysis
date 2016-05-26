@@ -1,10 +1,8 @@
 __author__ = 'sgibbes'
+from arcpy.sa import *
 import os
 import arcpy
-from arcpy import *
-from arcpy.sa import *
-import time, subprocess
-from sys import argv
+
 
 from dictionaries_v2 import dict
 
@@ -58,8 +56,9 @@ def forest_loss_function():
         lossyr_tcd = ExtractByMask(glad_alerts, fc_geo) * Raster(tcdmosaic) * Raster(confidence)
 
     zonal_stats_forest(lossyr_tcd, hansenareamosaic, filename, "forest_loss", hansenareamosaic, column_name)
-def carbon_emissions_function():
 
+
+def carbon_emissions_function():
     arcpy.AddMessage("extracting for carbon emissions")
     lossyr_tcd = ExtractByMask(glad_alerts, fc_geo)
     nodata = arcpy.GetRasterProperties_management(lossyr_tcd, "ALLNODATA")
@@ -250,8 +249,8 @@ hansenareamosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area'
 biomassmosaic = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\biomass'
 # tcdmosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\tcd_30m'
 # hansenareamosaic30m = r'D:\Users\sgibbes\simpe_script_test\mosaics.gdb\area_30m'
-glad_alerts = r'D:\Users\sgibbes\glad_alerts\glad_alerts_rasters\mosaics.gdb\day2015'
-confidence = r'D:\Users\sgibbes\glad_alerts\glad_alerts_rasters\mosaics.gdb\conf2015'
+glad_alerts = r'D:\Users\sgibbes\glad_alerts\glad_alerts_rasters\mosaics.gdb\day2016'
+confidence = r'D:\Users\sgibbes\glad_alerts\glad_alerts_rasters\mosaics.gdb\conf2016'
 # glad_alerts = r'D:\Users\sgibbes\glad_alerts\glad_alerts.gdb\glad_rep_of_congo'
 tcdmosaic = r'D:\Users\sgibbes\glad_alerts\glad_alerts.gdb\tcd_glad'
 # tcdmosaic = r'H:\gfw_gis_team_data\mosaics.gdb\treecoverdensity_2010'

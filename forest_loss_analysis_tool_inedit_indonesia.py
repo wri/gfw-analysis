@@ -46,6 +46,9 @@ def zonal_stats_forest(zone_raster, value_raster, filename, calculation, snapras
     if calculation == "area_30m" or calculation == "biomass_30m":
         arcpy.env.cellSize = "MAXOF"
     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + calculation)
+    arcpy.AddMessage(zone_raster)
+    arcpy.AddMessage(value_raster)
+    arcpy.AddMessage(z_stats_tbl)
     arcpy.gp.ZonalStatisticsAsTable_sa(zone_raster, "VALUE", value_raster, z_stats_tbl, "DATA", "SUM")
     # add a field to identify the table onces it is merged with the other zonal stats tables
     arcpy.AddField_management(z_stats_tbl, "ID", "TEXT")
@@ -80,19 +83,27 @@ def biomass_weight_function():
         # errortext.write(filename + " " + str(error_text) + "\n")
         # errortext.close()
         pass
-
 def tree_cover_extent_function():
     arcpy.AddMessage("extracting for tree cover extent")
     try:
-        tcd_extract = ExtractByMask(biomassmosaic, fc_geo)*tcdmosaic*idn_prf*lossyearmosaic
-        # tcd_extract = ExtractByMask(idn_prf, fc_geo) * lossyearmosaic
-        zonal_stats_forest(tcd_extract, hansenareamosaic, filename, "tree_cover_extent", hansenareamosaic, column_name)
+        arcpy.env.snapRaster = hansenareamosaic
+        arcpy.AddMessage('extracting by mask')
+        tcd_extract = (ExtractByMask(biomassmosaic, fc_geo) + Raster(idn_prf)) * tcdmosaic * lossyearmosaic * plantations
+        nodata = arcpy.GetRasterProperties_management(tcd_extract, "ALLNODATA")
+        nodata2 = nodata.getOutput(0)
+        if nodata2 == "1":
+            arcpy.AddMessage("passing bc no values in raster")
+        else:
+            # tcd_extract.save(r'D:\Users\sgibbes\indonesia_remaining_forest\iteration_2\extract4.tif')
+            # tcd_extract = ExtractByMask(biomassmosaic, fc_geo)*tcdmosaic*idn_prf*lossyearmosaic
+            # tcd_extract = ExtractByMask(idn_prf, fc_geo) * lossyearmosaic
+            zonal_stats_forest(tcd_extract, hansenareamosaic, filename, "tree_cover_extent", hansenareamosaic, column_name)
         del tcd_extract
-    except:
-        arcpy.AddMessage("Failed")
-        error_text_file = os.path.join(maindir,"errors.txt")
+    except IOError as e:
+        arcpy.AddMessage("     failed")
+        error_text = "I/O error({0}): {1}".format(e.errno, e.strerror)
         errortext = open(error_text_file, 'a')
-        errortext.write(column_name + " " + "error" + "\n")
+        errortext.write(filename + " " + str(error_text) + "\n")
         errortext.close()
     # if not "tree_cover_extent" in option_list:
     #     option_list.extend("tree_cover_extent")
@@ -271,7 +282,8 @@ adm0 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm0'
 adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
 adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
 grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
-idn_prf = r'D:\Users\sgibbes\indonesia_remaining_forest\idn_primary_proj_resample_clip_reclass_0.tif'
+idn_prf = r'D:\Users\sgibbes\indonesia_remaining_forest\mosaics.gdb\idn_prf'
+plantations = r'D:\Users\sgibbes\indonesia_remaining_forest\remaining_forest_shapefiles\idn_plan_final.tif'
 # remap table is located in folder where this script is stored
 remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable.dbf")
 remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction.rft.xml")
