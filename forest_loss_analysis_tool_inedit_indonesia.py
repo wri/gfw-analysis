@@ -94,7 +94,7 @@ def tree_cover_extent_function():
         if nodata2 == "1":
             arcpy.AddMessage("passing bc no values in raster")
         else:
-            # tcd_extract.save(r'D:\Users\sgibbes\indonesia_remaining_forest\iteration_2\extract4.tif')
+            tcd_extract.save(r'D:\Users\sgibbes\indonesia_remaining_forest\iteration_2\extract4.tif')
             # tcd_extract = ExtractByMask(biomassmosaic, fc_geo)*tcdmosaic*idn_prf*lossyearmosaic
             # tcd_extract = ExtractByMask(idn_prf, fc_geo) * lossyearmosaic
             zonal_stats_forest(tcd_extract, hansenareamosaic, filename, "tree_cover_extent", hansenareamosaic, column_name)
@@ -112,6 +112,8 @@ def tree_cover_extent_function():
 def merge_tables(outdir,option,filename,merged_dir):
     arcpy.env.workspace = outdir
     table_list = arcpy.ListTables("*"+filename+"_"+option)
+    arcpy.AddMessage(table_list)
+
     final_merge_table = os.path.join(merged_dir,filename+"_"+option)
     arcpy.Merge_management(table_list,final_merge_table)
     if option == "biomassweight" or option ==  "area only":
