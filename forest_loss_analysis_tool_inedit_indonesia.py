@@ -88,17 +88,20 @@ def tree_cover_extent_function():
     try:
         arcpy.env.snapRaster = hansenareamosaic
         arcpy.AddMessage('extracting by mask')
-        tcd_extract = (ExtractByMask(biomassmosaic, fc_geo) + Raster(idn_prf)) * tcdmosaic * lossyearmosaic * plantations
-        nodata = arcpy.GetRasterProperties_management(tcd_extract, "ALLNODATA")
+        biomass = ExtractByMask(biomassmosaic, fc_geo)
+
+        nodata = arcpy.GetRasterProperties_management(biomass, "ALLNODATA")
         nodata2 = nodata.getOutput(0)
         if nodata2 == "1":
             arcpy.AddMessage("passing bc no values in raster")
         else:
-            tcd_extract.save(r'D:\Users\sgibbes\indonesia_remaining_forest\iteration_2\extract4.tif')
+            tcd_extract = (ExtractByMask(biomassmosaic, fc_geo) + Raster(
+                idn_prf)) * tcdmosaic * lossyearmosaic * plantations
+            # tcd_extract.save(r'D:\Users\sgibbes\indonesia_remaining_forest\idn24d311_id64\idn24d311_id64.tif')
             # tcd_extract = ExtractByMask(biomassmosaic, fc_geo)*tcdmosaic*idn_prf*lossyearmosaic
             # tcd_extract = ExtractByMask(idn_prf, fc_geo) * lossyearmosaic
             zonal_stats_forest(tcd_extract, hansenareamosaic, filename, "tree_cover_extent", hansenareamosaic, column_name)
-        del tcd_extract
+            del tcd_extract, biomass
     except IOError as e:
         arcpy.AddMessage("     failed")
         error_text = "I/O error({0}): {1}".format(e.errno, e.strerror)
@@ -112,7 +115,7 @@ def tree_cover_extent_function():
 def merge_tables(outdir,option,filename,merged_dir):
     arcpy.env.workspace = outdir
     table_list = arcpy.ListTables("*"+filename+"_"+option)
-    arcpy.AddMessage(table_list)
+    # arcpy.AddMessage(table_list)
 
     final_merge_table = os.path.join(merged_dir,filename+"_"+option)
     arcpy.Merge_management(table_list,final_merge_table)
@@ -285,7 +288,7 @@ adm1 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm1'
 adm2 = r'H:\gfw_gis_team_data\gadm27_levels.gdb\adm2'
 grid = r'H:\gfw_gis_team_data\lossdata_footprint.shp'
 idn_prf = r'D:\Users\sgibbes\indonesia_remaining_forest\mosaics.gdb\idn_prf'
-plantations = r'D:\Users\sgibbes\indonesia_remaining_forest\remaining_forest_shapefiles\idn_plan_final.tif'
+plantations = r'D:\Users\sgibbes\indonesia_remaining_forest\remaining_forest_shapefiles\idn_plan_final_recode.tif'
 # remap table is located in folder where this script is stored
 remaptable = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remaptable.dbf")
 remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)),"remapfunction.rft.xml")
@@ -346,6 +349,9 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", admin_column_name)) as cursor:
         column_name2 = correctfcname(column_name)
         arcpy.AddMessage(column_name2)
         arcpy.AddMessage(column_name2 + " " + str(feature_count) + "/" + str(total_features))
+        errortext = open(error_text_file, 'a')
+        errortext.write(column_name2 + "\n")
+        errortext.close()
         if overwrite == "true":
             if forest_loss == "true" and carbon_emissions == "false":
                 forest_loss_function()
