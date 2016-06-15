@@ -1,4 +1,5 @@
 *.lock
+glad_alerts.py
 
 #pycharm
 .idea/
