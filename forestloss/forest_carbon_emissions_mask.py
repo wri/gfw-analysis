@@ -13,7 +13,7 @@ from forestloss_classes import user_inputs as user_inputs
 from forestloss_classes import biomass_calcs as biomass_calcs
 
 maindir, input_shapefile, column_name, filename, threshold, forest_loss, carbon_emissions, tree_cover_extent, \
-biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, admin_location = user_inputs.user_inputs_manual()
+biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, admin_location = user_inputs.user_inputs_tool()
 
 analysistext.analysisinfo(maindir, input_shapefile, filename, column_name, threshold, forest_loss, carbon_emissions,
     tree_cover_extent, biomass_weight, summarize_by, summarize_file, summarize_by_columnname, mosaic_location)
