@@ -1,18 +1,20 @@
 import arcpy
 import os
 def user_inputs_tool():
+    shapefile = arcpy.GetParameterAsText(0)
     maindir = arcpy.GetParameterAsText(1)
     mosaic_location = arcpy.GetParameterAsText(2)
-    admin_location = arcpy.GetParameterAsText(3)
-    shapefile = arcpy.GetParameterAsText(0)
-    filename = arcpy.GetParameterAsText(4)
-    column_name = arcpy.GetParameterAsText(5)
-    threshold = arcpy.GetParameterAsText(6)
-    forest_loss = arcpy.GetParameterAsText(7)
-    carbon_emissions = arcpy.GetParameterAsText(8)
-    tree_cover_extent = arcpy.GetParameterAsText(9)
-    biomass_weight = arcpy.GetParameterAsText(10)
-    summarize_by = arcpy.GetParameterAsText(11)
+
+
+    filename = arcpy.GetParameterAsText(3)
+    column_name = arcpy.GetParameterAsText(4)
+    threshold = arcpy.GetParameterAsText(5)
+    forest_loss = arcpy.GetParameterAsText(6)
+    carbon_emissions = arcpy.GetParameterAsText(7)
+    tree_cover_extent = arcpy.GetParameterAsText(8)
+    biomass_weight = arcpy.GetParameterAsText(9)
+    summarize_by = arcpy.GetParameterAsText(10)
+    admin_location = arcpy.GetParameterAsText(11)
     summarize_file = arcpy.GetParameterAsText(12)
     summarize_by_columnname = arcpy.GetParameterAsText(13)
     overwrite = arcpy.GetParameterAsText(14)

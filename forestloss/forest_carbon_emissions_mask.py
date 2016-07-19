@@ -119,13 +119,13 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.biomass_weight_function()
+                    analysis.biomass_weight_function(hansenareamosaic30m,biomassmosaic,fc_geo,tcdmosaic30m,filename,scratch_gdb,outdir,column_name2,orig_fcname)
             if tree_cover_extent == "true":
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.tree_cover_extent_function()
+                    analysis.tree_cover_extent_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,tcdmosaic,filename,orig_fcname)
         arcpy.AddMessage("     " + str(datetime.datetime.now() - fctime))
     del cursor
 
