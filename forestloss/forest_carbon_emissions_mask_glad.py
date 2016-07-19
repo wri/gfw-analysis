@@ -9,47 +9,13 @@ from forestloss_classes import directories as dir
 from forestloss_classes import analysis as analysis
 from forestloss_classes import biomass_calcs as biomass_calcs
 from forestloss_classes import merge_tables
+from forestloss_classes import user_inputs
 
-def user_inputs():
-    maindir = r'D:\Users\sgibbes\glad_alerts\alerts_biomassresample\test2'
-    mosaic_location = r'D:\Users\sgibbes\glad_alerts\glad_alerts_rasters\july\mosaics.gdb'
-    admin_location = r'H:\gfw_gis_team_data\gadm27_levels.gdb'
-    shapefile = r'D:\Users\sgibbes\glad_alerts\alerts_biomassresample\PER3.shp'
-    filename = 'resample'
-    column_name = 'adm1_id'
-    threshold = 25
-    forest_loss = "true"
-    carbon_emissions = "true"
-    tree_cover_extent = "false"
-    biomass_weight = "false"
-    summarize_by = 'do not summarize by another boundary'
-    summarize_file = "#"
-    summarize_by_columnname = "#"
-    overwrite = "false"
 
-    analysisinfo = os.path.join(maindir, "analysisinfo.txt")
-    if os.path.exists(analysisinfo):
-        os.remove(analysisinfo)
-    text = open(analysisinfo, 'w')
-    text.write("shapefile: {}".format(shapefile)
-               + "\nfile name: {}".format(filename)
-               + "\ncolumn_name: {}".format(column_name)
-               + "\nthreshold: {}".format(threshold)
-               + "\nforest_loss: {}".format(forest_loss)
-               + "\ncarbon emissions: {}".format(carbon_emissions)
-               + "\ntree cover extent: {}".format(tree_cover_extent)
-               + "\nbiomass weight: {}".format(biomass_weight)
-               + "\nsummarize by: {}".format(summarize_by)
-               + "\nsummarize file: {}".format(summarize_file)
-               + "\nsummarize by columnname: {}".format(summarize_by_columnname))
-    text.close()
-    return maindir, shapefile, column_name, filename, threshold, forest_loss, carbon_emissions, tree_cover_extent, \
-           biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, \
-           admin_location
 
 
 maindir, input_shapefile, column_name, filename, threshold, forest_loss, carbon_emissions, tree_cover_extent, \
-biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, admin_location = user_inputs()
+biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, admin_location = user_inputs.user_inputs_manual()
 
 # set up file paths, ignore files that aren't needed
 if forest_loss == "true":
@@ -76,8 +42,9 @@ arcpy.env.workspace = maindir
 arcpy.CheckOutExtension("Spatial")
 arcpy.env.overwriteOutput = "TRUE"
 
-scratch_gdb, outdir, merged_dir = dir.dirs(maindir)
 
+scratch_gdb, outdir, merged_dir = dir.dirs(maindir)
+arcpy.env.scratchWorkspace = scratch_gdb
 check.check_dups(input_shapefile, column_name)
 unique_id.unique_id(input_shapefile, column_name)
 
@@ -122,7 +89,7 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
                 analysis.forest_loss_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
             if carbon_emissions == "true":
                 # forest_loss_function()
-                analysis.carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+                analysis.new_carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
             if biomass_weight == "true":
                 analysis.biomass_weight_function(hansenareamosaic30m,biomassmosaic,fc_geo,tcdmosaic30m,filename,scratch_gdb,outdir,column_name2,orig_fcname)
             if tree_cover_extent == "true":
@@ -145,19 +112,19 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+                    analysis.new_carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
             if biomass_weight == "true":
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomassweight")
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.biomass_weight_function()
+                    analysis.biomass_weight_function(hansenareamosaic30m,biomassmosaic,fc_geo,tcdmosaic30m,filename,scratch_gdb,outdir,column_name2,orig_fcname)
             if tree_cover_extent == "true":
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.tree_cover_extent_function()
+                    analysis.tree_cover_extent_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,tcdmosaic,filename,orig_fcname)
         arcpy.AddMessage("     " + str(datetime.datetime.now() - fctime))
     del cursor
 

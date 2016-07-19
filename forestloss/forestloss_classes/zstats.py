@@ -5,6 +5,7 @@ import os
 def zonal_stats_mask(snapraster,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir):
     arcpy.env.snapRaster = snapraster
     arcpy.env.scratchWorkspace = scratch_gdb
+
     extent = fc_geo.extent
     envextent = arcpy.Extent(extent.XMin, extent.YMin, extent.XMax, extent.YMax)
     arcpy.env.extent = envextent
@@ -16,13 +17,15 @@ def zonal_stats_mask(snapraster,fc_geo,scratch_gdb,maindir,shapefile,column_name
     arcpy.AddMessage("converting layer to feature class")
     arcpy.FeatureClassToFeatureClass_conversion(layer, outdir, column_name2)
     mask = os.path.join(outdir, column_name2 + ".shp")
-    return mask
+    return mask, envextent
 
-def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster,mask,scratch_gdb,outdir,column_name2,orig_fcname):
+def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster,mask,scratch_gdb,outdir,column_name2,orig_fcname, envextent):
     arcpy.AddMessage(           "zonal stats")
     arcpy.env.scratchWorkspace = scratch_gdb
     arcpy.env.snapRaster = snapraster
     arcpy.env.mask = mask
+    arcpy.env.extent = envextent
+
     if calculation == "biomass_max" or calculation == "forest_loss" or calculation == "area_only":
         arcpy.env.cellSize = "MAXOF"
     if calculation == "biomass_min":

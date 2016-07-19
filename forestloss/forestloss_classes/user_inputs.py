@@ -24,13 +24,13 @@ def user_inputs_tool():
            admin_location
 
 def user_inputs_manual():
-    maindir = r'D:\Users\sgibbes\forest_carbon_emissions\compare_carbon'
-    mosaic_location = r'D:\Users\sgibbes\forest_carbon_emissions\mosaics.gdb'
+    maindir = r'D:\Users\sgibbes\glad_alerts\glad_alerts_rasters\compare_2015_2016\glad_2015_outputs'
+    mosaic_location = r'D:\Users\sgibbes\glad_alerts\glad_alerts_rasters\compare_2015_2016\glad_2015.gdb'
     admin_location = r'H:\gfw_gis_team_data\gadm27_levels.gdb'
-    shapefile = r'D:\Users\sgibbes\forest_carbon_emissions\idn34.shp'
-    filename = 'newcarbon'
-    column_name = 'OBJECTID'
-    threshold = "30"
+    shapefile = r'D:\Users\sgibbes\glad_alerts\glad_alerts_shapefiles\adm1_glad_alerts_clippedtocarbon.shp'
+    filename = 'glad2015'
+    column_name = 'adm1_id'
+    threshold = "25"
     forest_loss = "true"
     carbon_emissions = "true"
     tree_cover_extent = "false"
