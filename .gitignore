@@ -1,0 +1,9 @@
+*.lock
+glad_alerts.py
+
+#pycharm
+.idea/
+
+*.pyc
+*.adf
+
