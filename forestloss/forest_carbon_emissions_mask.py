@@ -6,15 +6,19 @@ from forestloss_classes import analysistext
 from forestloss_classes import remap
 from forestloss_classes import jointables
 from forestloss_classes import check_duplicates as check
-from forestloss_classes import unique_id as unique_id
+from forestloss_classes import unique_id
 from forestloss_classes import directories as dir
-from forestloss_classes import analysis as analysis
-from forestloss_classes import user_inputs as user_inputs
-from forestloss_classes import biomass_calcs as biomass_calcs
+from forestloss_classes import analysis
+from forestloss_classes import user_inputs
+from forestloss_classes import biomass_calcs
+from forestloss_classes import boundary_prep
+from forestloss_classes import merge_tables
 
+# get user inputs
 maindir, input_shapefile, column_name, filename, threshold, forest_loss, carbon_emissions, tree_cover_extent, \
 biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, admin_location = user_inputs.user_inputs_tool()
 
+# write inputs to text file
 analysistext.analysisinfo(maindir, input_shapefile, filename, column_name, threshold, forest_loss, carbon_emissions,
     tree_cover_extent, biomass_weight, summarize_by, summarize_file, summarize_by_columnname, mosaic_location)
 
@@ -52,14 +56,12 @@ unique_id.unique_id(input_shapefile, column_name)
 # prep boundary if necessary
 if summarize_by != "do not summarize by another boundary":
     arcpy.AddMessage('Intersecting with {} boundary'.format(summarize_by))
-    from forestloss_classes import boundary_prep as boundary_prep
-
     shapefile, admin_column_name = boundary_prep.boundary_prep(input_shapefile, summarize_by, adm0, adm1, adm2, maindir,
                                                                filename, summarize_by_columnname, summarize_file)
-
 else:
     shapefile = input_shapefile
     admin_column_name = column_name
+
 total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
 
 start = datetime.datetime.now()
@@ -68,7 +70,6 @@ option_list = []
 if forest_loss == "true":
     option_list.append("forest_loss")
 if carbon_emissions == "true":
-    # option_list.extend(["biomass_max", "biomass_min"])
     option_list.append("biomass")
 if tree_cover_extent == "true":
     option_list.append("tree_cover_extent")
@@ -113,7 +114,7 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.new_carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+                    analysis.carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
             if biomass_weight == "true":
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomassweight")
                 if arcpy.Exists(z_stats_tbl):
@@ -130,16 +131,11 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
     del cursor
 
 # merge output fc tables into 1 per analysis
-from forestloss_classes import merge_tables
-
 arcpy.AddMessage("merge tables")
+
 for option in option_list:
     print option
     merge_tables.merge_tables(outdir, option, filename, merged_dir, threshold)
-
-if "biomass_max" in option_list:
-    arcpy.AddMessage("calculating carbon emissions")
-    biomass_calcs.avgbiomass(merged_dir, filename)
 
 if "biomass" in option_list:
     arcpy.AddMessage("calculating carbon emissions")
@@ -152,11 +148,9 @@ if "biomassweight" in option_list:
 
 jointables.main(merged_dir, filename)
 
-
 def deletefields(table, fields_to_delete):
     for f in fields_to_delete:
         arcpy.DeleteField_management(table, f)
-
 
 if carbon_emissions == "true" or forest_loss == "true":
     deletefields(os.path.join(merged_dir, filename + "_forest_loss"),
