@@ -1,28 +1,6 @@
 import arcpy
 
-def calcbiomass(merged_dir, filename):
-    arcpy.env.workspace = merged_dir
-    area = arcpy.ListTables("*" + filename + "_forest_loss")[0]
-    biomass = arcpy.ListTables("*" + filename + "_biomass")[0]
 
-    arcpy.AddField_management(biomass, "L", "DOUBLE")
-    arcpy.CalculateField_management(biomass, "L", "!SUM!", "PYTHON_9.3", "")
-    arcpy.DeleteField_management(biomass, "SUM")
-
-
-    arcpy.AddField_management(biomass, "uID", "TEXT")
-    arcpy.CalculateField_management(biomass, "uID", """!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
-
-    arcpy.AddField_management(area, "uID", "TEXT")
-    arcpy.CalculateField_management(area, "uID", """!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
-
-    arcpy.JoinField_management(area, "uID", biomass, "uID", ["L"])
-
-    arcpy.AddField_management(area, "Emis_mtc02", "DOUBLE")
-
-    arcpy.CalculateField_management(area, "Emis_mtc02",
-                                    "((!SUM!/10000)/!COUNT! * (!L!/1000000))*.5*3.67",
-                                    "PYTHON_9.3", "")
 def avgbiomass(merged_dir, filename):
     # average the min/max biomass tables
     arcpy.env.workspace = merged_dir

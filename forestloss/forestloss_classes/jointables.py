@@ -1,31 +1,41 @@
 import arcpy
 
-def jointable(maintable,jointable,outfiledlist):
-    if maintable == jointable:
+
+def jointable(maintable, table_to_join, outfiledlist):
+
+    if maintable == table_to_join:
+        arcpy.AddMessage('passing on {}'.format(table_to_join))
         pass
+
     else:
-        arcpy.AddMessage("joining {} to {}".format(maintable,jointable))
-        arcpy.JoinField_management(maintable, "uID", jointable, "uID",outfiledlist )
+        arcpy.AddMessage("joining {} to {}".format(maintable, table_to_join))
+        arcpy.JoinField_management(table_to_join, "uID", maintable, "uID", outfiledlist)
+
 
 def fieldslist(table,filename):
+    if table == filename+"_emissions":
+
+        fieldlist = "emissions_tcl_area_m2"
+
     if table == filename+"_biomassweight":
         fieldlist = "MgBiomass;MgBiomassPerHa"
+
     if table == filename+"_tree_cover_extent" or table == filename+"_forest_loss" :
-        fieldlist  = "SUM"
+        fieldlist  = "emissions_tcl_area_m2"
+
     return fieldlist
 
-def main(merged_dir,filename):
+
+def main(merged_dir, filename):
+
     arcpy.env.workspace = merged_dir
 
-    area = arcpy.ListTables("*" + filename + "*")
-    maintable = area[0]
+    table_list = arcpy.ListTables("*" + filename + "*")
 
-    for table in area:
-        print table
-        if table == filename+"_biomass_max" or table == filename+"_biomass_min" or table == filename + "_biomass":
-            pass
-        else:
-            fields = fieldslist(table,filename)
-            print table
-            print fields
-            jointable(maintable,table,fields)
+    maintable = table_list[0]
+
+    for table in table_list:
+
+        fields = fieldslist(table,filename)
+        arcpy.AddMessage(fields)
+        jointable(maintable, table, fields)

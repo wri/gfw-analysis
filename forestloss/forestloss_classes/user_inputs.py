@@ -1,10 +1,10 @@
 import arcpy
-import os
+
+
 def user_inputs_tool():
     shapefile = arcpy.GetParameterAsText(0)
     maindir = arcpy.GetParameterAsText(1)
     mosaic_location = arcpy.GetParameterAsText(2)
-
 
     filename = arcpy.GetParameterAsText(3)
     column_name = arcpy.GetParameterAsText(4)
