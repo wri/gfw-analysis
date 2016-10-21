@@ -1,17 +1,28 @@
 import arcpy
 import datetime
+import os
 
 from forestloss_classes import zstats
 from forestloss_classes import directories as dir
 
+def merge_tables(outdir, filename, merged_dir):
+
+    arcpy.env.workspace = outdir
+    table_list = arcpy.ListTables("*")
+    final_merge_table = os.path.join(merged_dir, filename)
+
+    if len(table_list) > 1:
+        arcpy.Merge_management(table_list, final_merge_table)
+
+
 def simple_zonal_stats(shapefile, maindir):
     arcpy.env.overwriteOutput = "TRUE"
     scratch_gdb, outdir, merged_dir = dir.dirs(maindir)
-    nodatamosaic = r'C:\Users\samantha.gibbes\Documents\gis\sample_tiles\mosaics.gdb\nodata'
-    hansenareamosaic = r'C:\Users\samantha.gibbes\Documents\gis\sample_tiles\mosaics.gdb\area'
+    nodatamosaic = r'U:\sgibbes\New File Geodatabase.gdb\nodata'
+    hansenareamosaic = r'U:\sgibbes\New File Geodatabase.gdb\area'
     filename = "areacalcs"
     total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
-    with arcpy.da.SearchCursor(shapefile, ("Shape@", "tmp")) as cursor:
+    with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME")) as cursor:
         feature_count = 0
 
         for row in cursor:
@@ -32,5 +43,11 @@ def simple_zonal_stats(shapefile, maindir):
                                scratch_gdb, outdir, column_name2, column_name2, extent)
 
             print "Elapsed Time: {}".format(str(datetime.datetime.now() - fctime))
-simple_zonal_stats(r'C:\Users\samantha.gibbes\Documents\gis\land_area_calcs\adm1_to_test.shp',
-                   r'C:\Users\samantha.gibbes\Documents\gis\land_area_calcs')
+
+    return outdir, filename, merged_dir
+outdir, filename, merged_dir = simple_zonal_stats(r'U:\sgibbes\land_area_calcs\tzn_statet.shp',
+                   r'U:\sgibbes\land_area_calcs')
+
+merge_tables(outdir, filename, merged_dir)
+
+
