@@ -18,15 +18,14 @@ def merge_tables(outdir, filename, merged_dir):
 def simple_zonal_stats(shapefile, maindir):
     arcpy.env.overwriteOutput = "TRUE"
     scratch_gdb, outdir, merged_dir = dir.dirs(maindir)
-    nodatamosaic = r'U:\sgibbes\New File Geodatabase.gdb\nodata'
-    hansenareamosaic = r'U:\sgibbes\New File Geodatabase.gdb\area'
+    zone_mosaic = r'C:/Users/samantha.gibbes/Documents/gis/carbon_storage_estimates/New File Geodatabase.gdb/ifl_country'
+    value_mosaic = r'C:/Users/samantha.gibbes/Documents/gis/carbon_storage_estimates/New File Geodatabase.gdb/biomass'
     filename = "areacalcs"
     total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
     with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME")) as cursor:
         feature_count = 0
 
         for row in cursor:
-            fc_geo = row[0]
             column_name2 = row[1]
 
             fctime = datetime.datetime.now()
@@ -34,20 +33,19 @@ def simple_zonal_stats(shapefile, maindir):
             arcpy.AddMessage("processing feature {} out of {}".format(feature_count, total_features))
             fc_geo = row[0]
 
-            outputs = zstats.zonal_stats_mask(hansenareamosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2,
+            outputs = zstats.zonal_stats_mask(value_mosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2,
                                               outdir)
             mask = outputs[0]
             extent = outputs[1]
 
-            zstats.zonal_stats(nodatamosaic, hansenareamosaic, filename, "forest_loss", hansenareamosaic, mask,
+            zstats.zonal_stats(zone_mosaic, value_mosaic, filename, "forest_loss", value_mosaic, mask,
                                scratch_gdb, outdir, column_name2, column_name2, extent)
 
             print "Elapsed Time: {}".format(str(datetime.datetime.now() - fctime))
 
     return outdir, filename, merged_dir
-outdir, filename, merged_dir = simple_zonal_stats(r'U:\sgibbes\land_area_calcs\tzn_statet.shp',
-                   r'U:\sgibbes\land_area_calcs')
 
-merge_tables(outdir, filename, merged_dir)
+outdir, filename, merged_dir = simple_zonal_stats(r'C:\Users\samantha.gibbes\Documents\gis\carbon_storage_estimates\test\test_grid.shp',
+                   r'C:\Users\samantha.gibbes\Documents\gis\carbon_storage_estimates\test')
 
-
+# merge_tables(outdir, filename, merged_dir)
