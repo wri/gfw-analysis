@@ -14,3 +14,5 @@ forestloss/info/arc0005.dat
 *.dir
 forestloss/forestloss_classes/zstats.pyc
 *.dir
+*.pyc
+forestloss/info/arc.dir
