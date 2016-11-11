@@ -13,30 +13,30 @@ def remapmosaic(mosaic_location,forest_loss,biomass_weight,remapfunction,loss_tc
     tcdmosaic = os.path.join(mosaic_location, 'tcd')
     lossyr = os.path.join(mosaic_location, 'loss')
 
-    if forest_loss == "true":
-        arcpy.AddMessage("removing existing raster functions")
-        arcpy.EditRasterFunction_management(
-        tcdmosaic, "EDIT_MOSAIC_DATASET",
+
+    arcpy.AddMessage("removing existing raster functions")
+    arcpy.EditRasterFunction_management(
+    tcdmosaic, "EDIT_MOSAIC_DATASET",
+    "REMOVE", remapfunction)
+
+    arcpy.EditRasterFunction_management(
+        lossyr, "EDIT_MOSAIC_DATASET",
         "REMOVE", remapfunction)
 
-        arcpy.EditRasterFunction_management(
-            lossyr, "EDIT_MOSAIC_DATASET",
-            "REMOVE", remapfunction)
+    arcpy.AddMessage("inserting functions")
+    arcpy.EditRasterFunction_management(
+        tcdmosaic, "EDIT_MOSAIC_DATASET",
+        "INSERT", remapfunction)
 
-        arcpy.AddMessage("inserting functions")
-        arcpy.EditRasterFunction_management(
-            tcdmosaic, "EDIT_MOSAIC_DATASET",
-            "INSERT", remapfunction)
+    arcpy.EditRasterFunction_management(
+      lossyr, "EDIT_MOSAIC_DATASET",
+     "INSERT", loss_tcd_function)
 
-        arcpy.EditRasterFunction_management(
-          lossyr, "EDIT_MOSAIC_DATASET",
-         "INSERT", loss_tcd_function)
-
-    if biomass_weight == "true":
-        arcpy.EditRasterFunction_management(
-            tcdmosaic30m, "EDIT_MOSAIC_DATASET",
-            "REMOVE", remapfunction)
-
-        arcpy.EditRasterFunction_management(
-            tcdmosaic30m, "EDIT_MOSAIC_DATASET",
-            "INSERT", remapfunction)
+    # if biomass_weight == "true":
+    #     arcpy.EditRasterFunction_management(
+    #         tcdmosaic30m, "EDIT_MOSAIC_DATASET",
+    #         "REMOVE", remapfunction)
+    #
+    #     arcpy.EditRasterFunction_management(
+    #         tcdmosaic30m, "EDIT_MOSAIC_DATASET",
+    #         "INSERT", remapfunction)

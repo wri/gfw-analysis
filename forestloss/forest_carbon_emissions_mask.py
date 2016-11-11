@@ -92,11 +92,14 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
                                                scratch_gdb, maindir, shapefile, column_name2,
                                                outdir, lossyr, filename, orig_fcname)
 
-            # if biomass_weight == "true":
-            #     option_list.append("biomassweight")
-            #     biomassmosaic = os.path.join(mosaic_location, 'biomass')
-            #     analysis.biomass_weight_function(hansenareamosaic30m,biomassmosaic,fc_geo,tcdmosaic30m,filename,scratch_gdb,outdir,column_name2,orig_fcname)
-            #
+        if biomass_weight == "true":
+            option_list.append("biomassweight")
+            biomassmosaic = os.path.join(mosaic_location, 'biomass')
+            hansenareamosaic = os.path.join(mosaic_location, 'area')
+            tcdmosaic = os.path.join(mosaic_location, 'tcd')
+            analysis.biomass_weight_function(hansenareamosaic, biomassmosaic, fc_geo, scratch_gdb, maindir,
+                                             shapefile, column_name2, outdir, tcdmosaic, filename, orig_fcname)
+
 
         arcpy.AddMessage("     " + str(datetime.datetime.now() - fctime))
 

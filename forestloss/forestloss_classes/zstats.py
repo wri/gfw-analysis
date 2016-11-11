@@ -16,15 +16,19 @@ def zonal_stats_mask(snapraster,fc_geo,scratch_gdb,maindir,shapefile,column_name
     arcpy.SelectLayerByAttribute_management(layer, "NEW_SELECTION", exp)
     arcpy.AddMessage("converting layer to feature class")
     arcpy.FeatureClassToFeatureClass_conversion(layer, outdir, column_name2)
-    mask = os.path.join(outdir, column_name2 + ".shp")
+    mask = os.path.join(outdir, column_name2)
+    # mask = os.path.join(outdir, column_name2 + ".shp")
     return mask, envextent
 
-def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster,mask,scratch_gdb,outdir,column_name2,orig_fcname, envextent):
+def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, mask, scratch_gdb, outdir, column_name2,
+                orig_fcname, envextent):
     arcpy.AddMessage(           "zonal stats")
     arcpy.env.scratchWorkspace = scratch_gdb
     arcpy.env.snapRaster = snapraster
     arcpy.env.mask = mask
     arcpy.env.extent = envextent
+    print zone_raster
+    print value_raster
 
     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + calculation)
     arcpy.gp.ZonalStatisticsAsTable_sa(zone_raster, "VALUE", value_raster, z_stats_tbl, "DATA", "SUM")
