@@ -7,3 +7,12 @@ glad_alerts.py
 *.pyc
 *.adf
 
+*.xml
+forestloss/info/arc0006.nit
+*.nit
+forestloss/info/arc0005.dat
+*.dir
+forestloss/forestloss_classes/zstats.pyc
+*.dir
+*.pyc
+forestloss/info/arc.dir
