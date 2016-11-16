@@ -27,12 +27,9 @@ def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, ma
     arcpy.env.snapRaster = snapraster
     arcpy.env.mask = mask
     arcpy.env.extent = envextent
-<<<<<<< HEAD
+
     print zone_raster
     print value_raster
-=======
-    arcpy.env.cellSize = "MINOF"
->>>>>>> origin/master
 
     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + calculation)
     arcpy.gp.ZonalStatisticsAsTable_sa(zone_raster, "VALUE", value_raster, z_stats_tbl, "DATA", "SUM")
