@@ -18,7 +18,7 @@ def boundary_prep(input_shapefile,summarize_by,adm0,adm1,adm2,maindir,filename,s
     shapefile = os.path.join(maindir,filename+"_intersect.shp")
     arcpy.Intersect_analysis([input_shapefile,admin_file],shapefile)
     arcpy.AddField_management(shapefile, admin_column_name, "TEXT", "", "", 50)
-    arcpy.AddMessage(column_calc)
+
     arcpy.CalculateField_management(shapefile, admin_column_name, column_calc, "PYTHON_9.3")
     arcpy.CalculateField_management(shapefile, "FC_NAME", "!"+admin_column_name+"!", "PYTHON_9.3")
     return shapefile,admin_column_name
