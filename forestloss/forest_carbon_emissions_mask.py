@@ -66,7 +66,7 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
     for row in cursor:
         fctime = datetime.datetime.now()
         feature_count += 1
-        arcpy.AddMessage("processing feature {} out of {}".format(feature_count, total_features))
+        arcpy.AddMessage("\n processing feature {} out of {}".format(feature_count, total_features))
         fc_geo = row[0]
         column_name2 = row[1]
         orig_fcname = row[2]

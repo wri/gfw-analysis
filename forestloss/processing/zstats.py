@@ -35,13 +35,13 @@ def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, ma
     arcpy.AddField_management(z_stats_tbl, "ID", "TEXT")
     arcpy.CalculateField_management(z_stats_tbl, "ID", "'" + str(orig_fcname) + "'", "PYTHON_9.3")
 
-    arcpy.AddMessage("adding field")
+    arcpy.AddMessage("adding field \n")
     arcpy.AddField_management(z_stats_tbl, "uID", "TEXT")
     arcpy.CalculateField_management(z_stats_tbl, "uID", """!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
 
-    arcpy.AddField_management(z_stats_tbl, "admin", "TEXT")
+    arcpy.AddField_management(z_stats_tbl, "sum_field", "TEXT")
     admin_name = column_name2.split("_")[0]
-    arcpy.CalculateField_management(z_stats_tbl, "admin", "'" + admin_name + "'", "PYTHON_9.3", "")
+    arcpy.CalculateField_management(z_stats_tbl, "sum_field", "'" + admin_name + "'", "PYTHON_9.3", "")
 
     arcpy.env.workspace = maindir
     rasters = arcpy.ListRasters()
