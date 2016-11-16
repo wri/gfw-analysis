@@ -1,13 +1,15 @@
-import arcpy
 import os
+
+import arcpy
+
+from raster_functions import mosaic_path
+
 
 def remapmosaic(mosaic_location,forest_loss,biomass_weight,remapfunction,loss_tcd_function):
 
-    from forestloss_classes import mosaic_path as mosaic_path
     path = os.path.dirname(os.path.abspath(__file__))
     arcpy.AddMessage("updating raster function paths")
-    from forestloss_classes import mosaic_path
-    mosaic_path.mosaic_path(loss_tcd_function,mosaic_location,path)
+    mosaic_path.mosaic_path(loss_tcd_function, mosaic_location, path)
     loss_tcd_function = os.path.join(os.path.dirname(os.path.abspath(__file__)),"loss_tcd2.rft.xml")
     # remove potential existing function
     tcdmosaic = os.path.join(mosaic_location, 'tcd')

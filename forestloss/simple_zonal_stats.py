@@ -1,11 +1,12 @@
-import arcpy
 import datetime
 import os
 import subprocess
-import sys
+
+import arcpy
 
 from forestloss_classes import zstats
-from forestloss_classes import directories as dir
+from processing import directories as dir
+
 
 def merge_tables(outdir, filename, merged_dir):
 

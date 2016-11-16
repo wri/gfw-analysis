@@ -20,16 +20,13 @@ def zonal_stats_mask(snapraster,fc_geo,scratch_gdb,maindir,shapefile,column_name
     # mask = os.path.join(outdir, column_name2 + ".shp")
     return mask, envextent
 
-def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, mask, scratch_gdb, outdir, column_name2,
+def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, mask, maindir, outdir, column_name2,
                 orig_fcname, envextent):
     arcpy.AddMessage(           "zonal stats")
-    arcpy.env.scratchWorkspace = scratch_gdb
+    arcpy.env.scratchWorkspace = maindir
     arcpy.env.snapRaster = snapraster
     arcpy.env.mask = mask
     arcpy.env.extent = envextent
-
-    print zone_raster
-    print value_raster
 
     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + calculation)
     arcpy.gp.ZonalStatisticsAsTable_sa(zone_raster, "VALUE", value_raster, z_stats_tbl, "DATA", "SUM")
@@ -41,4 +38,8 @@ def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, ma
     arcpy.AddMessage("adding field")
     arcpy.AddField_management(z_stats_tbl, "uID", "TEXT")
     arcpy.CalculateField_management(z_stats_tbl, "uID", """!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
-    # arcpy.AddMessage("     " + str(datetime.datetime.now() - zstatstime))
+
+    arcpy.env.workspace = maindir
+    rasters = arcpy.ListRasters()
+    for r in rasters:
+        arcpy.Delete_management(r)

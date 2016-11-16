@@ -1,18 +1,17 @@
 __author__ = 'sgibbes'
-import os
-import arcpy
 import datetime
-from forestloss_classes import jointables
-from forestloss_classes import check_duplicates as check
-from forestloss_classes import unique_id as unique_id
-from forestloss_classes import directories as dir
+import os
+
+import arcpy
 from forestloss_classes import analysis as analysis
 from forestloss_classes import biomass_calcs as biomass_calcs
+from forestloss_classes import check_duplicates as check
+from forestloss_classes import directories as dir
+from forestloss_classes import jointables
 from forestloss_classes import merge_tables
 from forestloss_classes import user_inputs
 
-
-
+from table_util import unique_id as unique_id
 
 maindir, input_shapefile, column_name, filename, threshold, forest_loss, carbon_emissions, tree_cover_extent, \
 biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, admin_location = user_inputs.user_inputs_manual()
@@ -86,21 +85,21 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
         arcpy.AddMessage("processing feature {}".format(column_name2))
         if overwrite == "true":
             if forest_loss == "true" and carbon_emissions == "false":
-                analysis.forest_loss_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+                analysis.forest_loss_function(hansenareamosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, lossyr, filename, orig_fcname)
             if carbon_emissions == "true":
                 # forest_loss_function()
-                analysis.new_carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+                analysis.new_carbon_emissions_function(hansenareamosaic, biomassmosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, lossyr, filename, orig_fcname)
             if biomass_weight == "true":
-                analysis.biomass_weight_function(hansenareamosaic30m,biomassmosaic,fc_geo,tcdmosaic30m,filename,scratch_gdb,outdir,column_name2,orig_fcname)
+                analysis.biomass_weight_function(hansenareamosaic30m, biomassmosaic, fc_geo, tcdmosaic30m, filename, scratch_gdb, outdir, column_name2, orig_fcname)
             if tree_cover_extent == "true":
-                analysis.tree_cover_extent_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,tcdmosaic,filename,orig_fcname)
+                analysis.tree_cover_extent_function(hansenareamosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, tcdmosaic, filename, orig_fcname)
         if overwrite == "false":
             if forest_loss == "true" and carbon_emissions == "false":
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "forest_loss")
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.forest_loss_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+                    analysis.forest_loss_function(hansenareamosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, lossyr, filename, orig_fcname)
             if carbon_emissions == "true":
                 if column_name2[:3] == "IDN":
                     arcpy.AddMessage("using idn loss yr mosaic")
@@ -112,19 +111,19 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.new_carbon_emissions_function(hansenareamosaic,biomassmosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+                    analysis.new_carbon_emissions_function(hansenareamosaic, biomassmosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, lossyr, filename, orig_fcname)
             if biomass_weight == "true":
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "biomassweight")
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.biomass_weight_function(hansenareamosaic30m,biomassmosaic,fc_geo,tcdmosaic30m,filename,scratch_gdb,outdir,column_name2,orig_fcname)
+                    analysis.biomass_weight_function(hansenareamosaic30m, biomassmosaic, fc_geo, tcdmosaic30m, filename, scratch_gdb, outdir, column_name2, orig_fcname)
             if tree_cover_extent == "true":
                 z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + "tree_cover_extent")
                 if arcpy.Exists(z_stats_tbl):
                     arcpy.AddMessage("already exists")
                 else:
-                    analysis.tree_cover_extent_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,tcdmosaic,filename,orig_fcname)
+                    analysis.tree_cover_extent_function(hansenareamosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, tcdmosaic, filename, orig_fcname)
         arcpy.AddMessage("     " + str(datetime.datetime.now() - fctime))
     del cursor
 

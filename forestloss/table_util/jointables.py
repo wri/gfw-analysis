@@ -12,17 +12,20 @@ def jointable(maintable, table_to_join, outfiledlist):
         arcpy.JoinField_management(table_to_join, "uID", maintable, "uID", outfiledlist)
 
 
-def fieldslist(table,filename):
+def fieldslist(table, filename):
     if table == filename+"_emissions":
 
         fieldlist = "emissions_tcl_area_m2"
 
-    if table == filename+"_biomassweight":
+    elif table == filename+"_biomassweight":
         fieldlist = "MgBiomass;MgBiomassPerHa"
 
-    if table == filename+"_tree_cover_extent" or table == filename+"_forest_loss" :
+    elif table == filename+"_tree_cover_extent" or table == filename+"_forest_loss" :
         fieldlist  = "emissions_tcl_area_m2"
 
+    else:
+        arcpy.AddMessage("not found")
+        arcpy.AddMessage("{}, {}".format(table, filename))
     return fieldlist
 
 
@@ -30,7 +33,7 @@ def main(merged_dir, filename):
 
     arcpy.env.workspace = merged_dir
 
-    table_list = arcpy.ListTables("*" + filename + "*")
+    table_list = arcpy.ListTables(filename + "*")
 
     maintable = table_list[0]
 

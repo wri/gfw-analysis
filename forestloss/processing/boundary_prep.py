@@ -1,6 +1,9 @@
-import arcpy
 import os
-from forestloss_classes import column_calcs as columncalcs
+
+import arcpy
+
+from processing import column_calcs as columncalcs
+
 
 def boundary_prep(input_shapefile,summarize_by,adm0,adm1,adm2,maindir,filename,summarize_by_columnname,summarize_file):
     # arcpy.AddField_management(input_shapefile, "FC_NAME", "TEXT", "", "", 50)

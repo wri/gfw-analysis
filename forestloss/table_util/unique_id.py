@@ -1,5 +1,5 @@
 import arcpy
-import correct_rownames as cor
+import processing.correct_rownames as cor
 
 def unique_id(dataset,column):
     arcpy.AddField_management(dataset, "FC_NAME", "TEXT")

@@ -1,18 +1,19 @@
 __author__ = 'sgibbes'
-import os
-import arcpy
 import datetime
-from forestloss_classes import analysistext
-from forestloss_classes import remap
-from forestloss_classes import jointables
-from forestloss_classes import check_duplicates as check
-from forestloss_classes import unique_id
-from forestloss_classes import directories as dir
-from forestloss_classes import analysis
-from forestloss_classes import user_inputs
-from forestloss_classes import biomass_calcs
-from forestloss_classes import boundary_prep
-from forestloss_classes import merge_tables
+import os
+
+import arcpy
+
+from processing import analysis
+from processing import boundary_prep
+from processing import check_duplicates as check
+from processing import directories as dir
+from table_util import jointables
+from table_util import merge_tables
+from raster_functions import remap
+from table_util import unique_id
+from processing import user_inputs
+from processing import analysistext
 
 # get user inputs
 maindir, input_shapefile, column_name, filename, threshold, forest_loss, carbon_emissions, tree_cover_extent, \
@@ -20,7 +21,7 @@ biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite
 
 # write inputs to text file
 analysistext.analysisinfo(maindir, input_shapefile, filename, column_name, threshold, forest_loss, carbon_emissions,
-    tree_cover_extent, biomass_weight, summarize_by, summarize_file, summarize_by_columnname, mosaic_location)
+                          tree_cover_extent, biomass_weight, summarize_by, summarize_file, summarize_by_columnname, mosaic_location)
 
 # set up file paths, ignore files that aren't needed
 option_list = []
@@ -55,9 +56,9 @@ total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
 start = datetime.datetime.now()
 
 # remap tcd mosaic based on user input
-remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)), "remap_functions",
+remapfunction = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raster_functions",
                              'remap_gt' + threshold + '.rft.xml')
-loss_tcd_function = os.path.join(os.path.dirname(os.path.abspath(__file__)), "loss_tcd.rft.xml")
+loss_tcd_function = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raster_functions", "loss_tcd.rft.xml")
 remap.remapmosaic(mosaic_location, forest_loss, biomass_weight, remapfunction, loss_tcd_function)
 
 with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cursor:
@@ -75,13 +76,13 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
             lossyr = os.path.join(mosaic_location, 'loss')
             tcdmosaic = os.path.join(mosaic_location, 'tcd')
             hansenareamosaic = os.path.join(mosaic_location, 'area')
-            analysis.forest_loss_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,lossyr,filename,orig_fcname)
+            analysis.forest_loss_function(hansenareamosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, lossyr, filename, orig_fcname)
 
         if tree_cover_extent == "true":
             option_list.append("tree_cover_extent")
             hansenareamosaic = os.path.join(mosaic_location, 'area')
             tcdmosaic = os.path.join(mosaic_location, 'tcd')
-            analysis.tree_cover_extent_function(hansenareamosaic,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir,tcdmosaic,filename,orig_fcname)
+            analysis.tree_cover_extent_function(hansenareamosaic, fc_geo, scratch_gdb, maindir, shapefile, column_name2, outdir, tcdmosaic, filename, orig_fcname)
 
         if carbon_emissions == "true":
             option_list.extend(["emissions", "forest_loss"])
