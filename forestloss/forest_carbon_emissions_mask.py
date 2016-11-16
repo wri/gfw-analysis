@@ -15,6 +15,8 @@ from table_util import unique_id
 from processing import user_inputs
 from processing import analysistext
 
+arcpy.AddMessage("\n")
+
 # get user inputs
 maindir, input_shapefile, column_name, filename, threshold, forest_loss, carbon_emissions, tree_cover_extent, \
 biomass_weight, summarize_by, summarize_file, summarize_by_columnname, overwrite, mosaic_location, admin_location = user_inputs.user_inputs_tool()
@@ -39,13 +41,20 @@ arcpy.env.overwriteOutput = "TRUE"
 
 scratch_gdb, outdir, merged_dir = dir.dirs(maindir)
 
+spatial_ref = arcpy.Describe(input_shapefile).spatialReference
+if not spatial_ref.name == "GCS_WGS_1984":
+    arcpy.AddMessage('projecting')
+    sr = arcpy.SpatialReference(4326)
+
+    arcpy.Project_management(input_shapefile, "projected.shp", sr )
+    input_shapefile = "projected.shp"
 check.check_dups(input_shapefile, column_name)
 unique_id.unique_id(input_shapefile, column_name)
 
 # prep boundary if necessary
 if summarize_by != "do not summarize by another boundary":
     arcpy.AddMessage('Intersecting with {} boundary'.format(summarize_by))
-    shapefile, admin_column_name = boundary_prep.boundary_prep(input_shapefile, summarize_by, adm0, adm1, adm2, maindir,
+    shapefile, admin_column_name = boundary_prep.boundary_prep('projected', summarize_by, adm0, adm1, adm2, maindir,
                                                                filename, summarize_by_columnname, summarize_file)
 else:
     shapefile = input_shapefile
@@ -66,7 +75,7 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
     for row in cursor:
         fctime = datetime.datetime.now()
         feature_count += 1
-        arcpy.AddMessage("\n processing feature {} out of {}".format(feature_count, total_features))
+        arcpy.AddMessage("\nprocessing feature {} out of {}".format(feature_count, total_features))
         fc_geo = row[0]
         column_name2 = row[1]
         orig_fcname = row[2]

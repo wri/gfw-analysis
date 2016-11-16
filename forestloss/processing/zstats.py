@@ -35,7 +35,7 @@ def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, ma
     arcpy.AddField_management(z_stats_tbl, "ID", "TEXT")
     arcpy.CalculateField_management(z_stats_tbl, "ID", "'" + str(orig_fcname) + "'", "PYTHON_9.3")
 
-    arcpy.AddMessage("adding field \n")
+    arcpy.AddMessage("adding field")
     arcpy.AddField_management(z_stats_tbl, "uID", "TEXT")
     arcpy.CalculateField_management(z_stats_tbl, "uID", """!ID!+"_"+str( !Value!)""", "PYTHON_9.3", "")
 
