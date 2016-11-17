@@ -4,7 +4,7 @@ import subprocess
 
 import arcpy
 
-from forestloss_classes import zstats
+from processing import zstats
 from processing import directories as dir
 
 
@@ -21,9 +21,9 @@ def merge_tables(outdir, filename, merged_dir):
 def simple_zonal_stats(shapefile, maindir):
     arcpy.env.overwriteOutput = "TRUE"
     scratch_gdb, outdir, merged_dir = dir.dirs(maindir)
-    nodatamosaic = r'U:\sgibbes\New File Geodatabase.gdb\nodata'
-    hansenareamosaic = r'U:\sgibbes\New File Geodatabase.gdb\area'
-    filename = "areacalcs"
+    nodatamosaic = r'U:\sgibbes\carbon_estimate_calcs\New File Geodatabase.gdb\floristic'
+    hansenareamosaic = r'U:\sgibbes\carbon_estimate_calcs\New File Geodatabase.gdb\biomass'
+    filename = "carbon_esti"
     total_features = int(arcpy.GetCount_management(shapefile).getOutput(0))
     start_time = datetime.datetime.now()
     with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME")) as cursor:
@@ -50,19 +50,25 @@ def simple_zonal_stats(shapefile, maindir):
                 mask = outputs[0]
                 extent = outputs[1]
 
-                cmd = ["C:\Python27\ArcGIS10.4\python.exe", zstats_cmd,
-                       '-v', hansenareamosaic, '-z', nodatamosaic, '-m', mask, '-t', z_stats_tbl]
 
-                # silence error message
-                FNULL = open(os.devnull, 'w')
-                try:
-
-
-                    subprocess.check_call(cmd, stdout=FNULL, stderr=subprocess.STDOUT)
-
-                except:
-
-                    print "not running this"
+                arcpy.env.snapRaster = nodatamosaic
+                arcpy.env.mask = mask
+                arcpy.env.extent = extent
+                arcpy.gp.ZonalStatisticsAsTable_sa(nodatamosaic, "VALUE", hansenareamosaic, z_stats_tbl, "DATA", "SUM")
+                #
+                # cmd = ["C:\Python27\ArcGIS10.4\python.exe", zstats_cmd,
+                #        '-v', hansenareamosaic, '-z', nodatamosaic, '-m', mask, '-t', z_stats_tbl]
+                #
+                # # silence error message
+                # FNULL = open(os.devnull, 'w')
+                # try:
+                #
+                #
+                #     subprocess.check_call(cmd, stdout=FNULL, stderr=subprocess.STDOUT)
+                #
+                # except:
+                #
+                #     print "not running this"
 
 
                 #
@@ -75,9 +81,9 @@ def simple_zonal_stats(shapefile, maindir):
     print "Total Run Time: {}".format(str(datetime.datetime.now() - start_time))
     return outdir, filename, merged_dir
 
-outdir, filename, merged_dir = simple_zonal_stats(r'U:\sgibbes\tropics_adm0_clippedtocarbon_proj_int_carbon_proj.shp',
-                   r'U:\sgibbes\land_area_calcs')
+outdir, filename, merged_dir = simple_zonal_stats(r'U:\sgibbes\carbon_estimate_calcs\biomass_tiles.shp',
+                   r'U:\sgibbes\carbon_estimate_calcs\carbon_estimates_floristic')
 
-merge_tables(outdir, filename, merged_dir)
+# merge_tables(outdir, filename, merged_dir)
 
 

@@ -1,6 +1,7 @@
 import arcpy
 arcpy.CheckOutExtension("Spatial")
 import os
+import subprocess
 
 def zonal_stats_mask(snapraster,fc_geo,scratch_gdb,maindir,shapefile,column_name2,outdir):
     arcpy.env.snapRaster = snapraster
@@ -29,7 +30,24 @@ def zonal_stats(zone_raster, value_raster, filename, calculation, snapraster, ma
     arcpy.env.extent = envextent
 
     z_stats_tbl = os.path.join(outdir, column_name2 + "_" + filename + "_" + calculation)
-    arcpy.gp.ZonalStatisticsAsTable_sa(zone_raster, "VALUE", value_raster, z_stats_tbl, "DATA", "SUM")
+
+    zstats_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'zstats_cmd.py')
+
+    cmd = ["C:\Python27\ArcGIS10.3\python.exe", zstats_cmd,
+           '-v', value_raster, '-z', zone_raster, '-m', mask, '-t', z_stats_tbl]
+
+    # silence error message
+    FNULL = open(os.devnull, 'w')
+    try:
+
+        subprocess.check_call(cmd, stdout=FNULL, stderr=subprocess.STDOUT)
+
+    except:
+
+        arcpy.AddMessage('failed: mostly likely because raster doesnt cover feature')
+
+
+    # arcpy.gp.ZonalStatisticsAsTable_sa(zone_raster, "VALUE", value_raster, z_stats_tbl, "DATA", "SUM")
     # add a field to identify the table onces it is merged with the other zonal stats tables
 
     arcpy.AddField_management(z_stats_tbl, "ID", "TEXT")
