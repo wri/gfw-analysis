@@ -119,7 +119,7 @@ with arcpy.da.SearchCursor(shapefile, ("Shape@", "FC_NAME", column_name)) as cur
 arcpy.AddMessage("merge tables")
 
 for option in option_list:
-    merge_tables.merge_tables(outdir, option, filename, merged_dir, threshold)
+    table = merge_tables.merge_tables(outdir, option, filename, merged_dir, threshold)
 
 # if "biomass" in option_list:
 #     arcpy.AddMessage("calculating carbon emissions")
@@ -130,22 +130,23 @@ for option in option_list:
 #     arcpy.AddMessage("calculating biomass density")
 #     biomass_calcs.biomass30m_calcs(merged_dir, filename)
 
-jointables.main(merged_dir, filename)
+if table:
+    jointables.main(merged_dir, filename)
 
-def deletefields(table, fields_to_delete):
-    for f in fields_to_delete:
-        arcpy.DeleteField_management(table, f)
+    def deletefields(table, fields_to_delete):
+        for f in fields_to_delete:
+            arcpy.DeleteField_management(table, f)
 
-if carbon_emissions == "true" or forest_loss == "true":
-    # deletefields(os.path.join(merged_dir, filename + "_forest_loss"),
-    #              ["Value", "COUNT", "AREA", "uID", "L", "S", "SUM"])
-    arcpy.TableToTable_conversion(os.path.join(merged_dir, filename + "_forest_loss"), maindir,
-                                  filename + "_forest_loss.dbf")
-else:
-    if tree_cover_extent == "true" and forest_loss == "false":
-        arcpy.TableToTable_conversion(os.path.join(merged_dir, filename + "_tree_cover_extent"), maindir,
-                                      filename + "_tree_cover_extent.dbf")
-    if biomass_weight == "true" and forest_loss == "false":
-        # deletefields(os.path.join(merged_dir, filename + "_biomassweight"), ["Value", "AREA", "uID", "L", "S", "SUM"])
-        arcpy.TableToTable_conversion(os.path.join(merged_dir, filename + "_biomassweight"), maindir,
-                                      filename + "_biomassweight.dbf")
+    if carbon_emissions == "true" or forest_loss == "true":
+        # deletefields(os.path.join(merged_dir, filename + "_forest_loss"),
+        #              ["Value", "COUNT", "AREA", "uID", "L", "S", "SUM"])
+        arcpy.TableToTable_conversion(os.path.join(merged_dir, filename + "_forest_loss"), maindir,
+                                      filename + "_forest_loss.dbf")
+    else:
+        if tree_cover_extent == "true" and forest_loss == "false":
+            arcpy.TableToTable_conversion(os.path.join(merged_dir, filename + "_tree_cover_extent"), maindir,
+                                          filename + "_tree_cover_extent.dbf")
+        if biomass_weight == "true" and forest_loss == "false":
+            # deletefields(os.path.join(merged_dir, filename + "_biomassweight"), ["Value", "AREA", "uID", "L", "S", "SUM"])
+            arcpy.TableToTable_conversion(os.path.join(merged_dir, filename + "_biomassweight"), maindir,
+                                          filename + "_biomassweight.dbf")
